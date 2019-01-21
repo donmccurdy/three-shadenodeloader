@@ -65,6 +65,8 @@ import {
 
 } from './node_modules/three/examples/js/nodes/Nodes.js';
 
+const InputOperator = { VALUE: 1, ADD: 2, MUL: 4 };
+
 class ShadeLoader {
 
   constructor ( manager ) {
@@ -107,13 +109,32 @@ class ShadeLoader {
 
         deps.forEach( ( dep, depIndex ) => {
 
-          const [ leftID, leftProp, rightID, rightProp, options, _ ] = dependencies[ nodeID ][ depIndex ];
+          const [ leftID, leftProp, rightID, rightProp, options, op ] = dependencies[ nodeID ][ depIndex ];
 
           if ( leftProp === 'sinTime' ) dep = new Math1Node( dep, Math1Node.SIN );
           if ( leftProp === 'cosTime' ) dep = new Math1Node( dep, Math1Node.COS );
 
-          // TODO(donmccurdy): It's possible for two deps to target the same property, and unclear how to resolve.
-          inputs[ rightProp ] = dep;
+          // Two connections can target the same node input property. It appears that the second
+          // occurrence contains an operator >1, specifying how to modify the existing value.
+          switch ( op ) {
+
+            case InputOperator.VALUE:
+              if ( inputs[ rightProp ] ) console.warn( `[THREE.ShadeLoader] Overwriting ".${rightProp}".` );
+              inputs[ rightProp ] = dep;
+              break;
+
+            case InputOperator.ADD:
+              inputs[ rightProp ] = new OperatorNode( dep, inputs[ rightProp ], OperatorNode.ADD );
+              break;
+
+            case InputOperator.MUL:
+              inputs[ rightProp ] = new OperatorNode( dep, inputs[ rightProp ], OperatorNode.MUL );
+              break;
+
+            default:
+              console.warn( `[THREE.ShadeLoader] Unknown operator "${op}" for socket ".${rightProp}".` );
+
+          }
 
         } );
 
@@ -207,7 +228,7 @@ class ShadeLoader {
 
           case 'PositionNode':
             node = new PositionNode( PositionNode.LOCAL );
-             // node = new PositionNode( nodeDef.options.space === 'world' ? PositionNode.WORLD : PositionNode.LOCAL );
+            // node = new PositionNode( nodeDef.options.space === 'world' ? PositionNode.WORLD : PositionNode.LOCAL );
             break;
 
           case 'RemapNode':
@@ -283,7 +304,7 @@ class ShadeLoader {
 
     json.connections.forEach( ( connection ) => {
 
-      const [ leftID, leftProp, rightID, rightProp, options, _ ] = connection;
+      const [ leftID, leftProp, rightID, rightProp, options, op ] = connection;
 
       if ( dependencies[ rightID ] === undefined ) dependencies[ rightID ] = [];
 
@@ -292,7 +313,7 @@ class ShadeLoader {
       const leftNodeDef = json.nodes.find( ( node ) => node.id === leftID );
       const rightNodeDef = json.nodes.find( ( node ) => node.id === rightID );
 
-      console.log( `${leftNodeDef.options.userLabel}.${leftProp} --> ${rightNodeDef.options.userLabel}.${rightProp}` );
+      console.log( `${leftNodeDef.options.userLabel}.${leftProp} --> ${rightNodeDef.options.userLabel}.${rightProp} <${op}>` );
 
     } );
 
