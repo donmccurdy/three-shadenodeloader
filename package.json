@@ -1,0 +1,22 @@
+{
+  "name": "three-shadeloader",
+  "version": "0.0.1",
+  "description": "Load shader graphs from Shade app for iOS, to three.js",
+  "main": "ShadeLoader.js",
+  "scripts": {},
+  "keywords": [
+    "three",
+    "shaders",
+    "three.js",
+    "webgl",
+    "graphics"
+  ],
+  "author": "Don McCurdy <dm@donmccurdy.com>",
+  "license": "MIT",
+  "dependencies": {
+    "three": "^0.100.0"
+  },
+  "devDependencies": {
+    "serve": "^10.1.1"
+  }
+}
