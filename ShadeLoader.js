@@ -112,6 +112,7 @@ class ShadeLoader {
           if ( leftProp === 'sinTime' ) dep = new Math1Node( dep, Math1Node.SIN );
           if ( leftProp === 'cosTime' ) dep = new Math1Node( dep, Math1Node.COS );
 
+          // TODO(donmccurdy): It's possible for two deps to target the same property, and unclear how to resolve.
           inputs[ rightProp ] = dep;
 
         } );
@@ -144,8 +145,35 @@ class ShadeLoader {
             break;
 
           case 'GradientNode':
-            // TODO(donmccurdy): Implement GradientNode.
-            node = new FloatNode( 1.0 );
+            const canvas = document.createElement( 'canvas' );
+            canvas.width = 256;
+            canvas.height = 16;
+
+            // debug
+            canvas.style.position = 'absolute';
+            canvas.style.top = '1em';
+            canvas.style.left = '1em';
+            document.body.appendChild( canvas );
+
+            const ctx = canvas.getContext( '2d' );
+            const { startPos, endPos } = nodeDef.options;
+            const sx = canvas.width / ( endPos[ 0 ] - startPos[ 0 ] );
+            const sy = 1; // canvas.height / ( endPos[ 1 ] - startPos[ 1 ] );
+            const gradient = ctx.createLinearGradient( sx * startPos[ 0 ], sy * startPos[ 1 ], sx * endPos[ 0 ], sy * endPos[ 1 ] );
+
+            for ( let i = 0; i < nodeDef.options.value.colors.length; ++ i ) {
+
+              const color = new THREE.Color().fromArray( nodeDef.options.value.colors[ i ].map( ( v ) => v / 256 ) );
+              const stop = nodeDef.options.value.stops[ i ];
+              gradient.addColorStop( stop, color.getStyle() );
+
+            }
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect( 0, 0, 256, 16 );
+
+            const texture = new THREE.CanvasTexture( canvas );
+            node = new TextureNode( texture );
             break;
 
           case 'GroupNode':
@@ -161,6 +189,7 @@ class ShadeLoader {
             break;
 
           case 'Noise3DNode':
+            // TODO(donmccurdy): Pretty sure this is just 2D noise.
             node = new NoiseNode();
             break;
 
@@ -177,12 +206,23 @@ class ShadeLoader {
             break;
 
           case 'PositionNode':
-             node = new PositionNode( nodeDef.options.space === 'world' ? PositionNode.WORLD : PositionNode.LOCAL );
-             break;
+            node = new PositionNode( PositionNode.LOCAL );
+             // node = new PositionNode( nodeDef.options.space === 'world' ? PositionNode.WORLD : PositionNode.LOCAL );
+            break;
 
           case 'RemapNode':
-            // TODO(donmccurdy): Implement RemapNode.
-            return createParameter( nodeDef, inputs, 'arg1' );
+            const [ domainLow, domainHigh ] = nodeDef.inputs.arg2.value;
+            const [ rangeLow, rangeHigh ] = nodeDef.inputs.arg3.value;
+            const factor = ( rangeHigh - rangeLow ) / ( domainHigh - domainLow );
+            node = new OperatorNode(
+              new OperatorNode(
+                new OperatorNode( createParameter( nodeDef, inputs, 'arg1' ), new FloatNode( domainLow ), OperatorNode.SUB ),
+                new FloatNode( factor ),
+                OperatorNode.MUL
+              ),
+              new FloatNode( rangeLow ),
+              OperatorNode.ADD
+            );
             break;
 
           case 'StepNode':
@@ -194,7 +234,7 @@ class ShadeLoader {
             break;
 
           case 'TimeNode':
-            node = new TimerNode();
+            node = new TimerNode( 1.0 );
             break;
         }
 
@@ -256,21 +296,9 @@ class ShadeLoader {
 
     } );
 
-    // json.nodes.forEach( ( nodeDef, nodeIndex ) => {
-
-    //   console.log( `${nodeDef.class}:${nodeDef.name}:${nodeDef.options.userLabel}:${nodeIndex}` );
-
-    // } );
-
     const surfaceNodeDef = json.nodes.find( ( nodeDef ) => nodeDef.class === 'SurfaceNode' );
 
     createNode( surfaceNodeDef.id ).then( onLoad ).catch( onError );
-
-    // material.color = new ColorNode( 0xff0000 );
-    // material.roughness = new FloatNode( 1.0 );
-    // material.metalness = new FloatNode( 0.0 );
-
-    // onLoad( material );
 
   }
 
