@@ -11,11 +11,14 @@
   }
 </style>
 <script src="./node_modules/three/build/three.js"></script>
+<script src="./node_modules/three/examples/js/controls/OrbitControls.js"></script>
+<script src="./node_modules/three/examples/js/loaders/GLTFLoader.js"></script>
 <script type="module">
   import { ShadeLoader } from './ShadeLoader.js';
 
   const renderer = new THREE.WebGLRenderer( { antialias: true } );
   renderer.setSize( window.innerWidth, window.innerHeight );
+  renderer.setClearColor( 0x202020 );
   renderer.physicallyCorrectLights = true;
   renderer.gammaOutput = true;
   renderer.gammaFactor = 2.2;
@@ -23,9 +26,11 @@
 
   const scene = new THREE.Scene();
 
-  const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 10 );
+  const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.01, 25 );
   camera.position.set( 5, 3, 4 );
   scene.add( camera );
+
+  const controls = new THREE.OrbitControls( camera );
 
   const hemiLight = new THREE.HemisphereLight( 0x4488AA, 0x22DD77, 1.0 );
   scene.add( hemiLight );
@@ -34,7 +39,21 @@
   directLight.position.set( 3, 5, 3 );
   scene.add( directLight );
 
+  scene.add( new THREE.GridHelper() );
+
   const clock = new THREE.Clock();
+
+  let mesh, geometry, material;
+
+  const modelLoader = new THREE.GLTFLoader();
+
+  modelLoader.load( 'assets/Suzanne.glb', ( { scene } ) => {
+
+    geometry = scene.children[ 0 ].geometry;
+
+    animate();
+
+  } );
 
   const loader = new ShadeLoader();
 
@@ -42,32 +61,11 @@
 
     'shaders/Dissolve/Graph.json',
 
-    ( material ) => {
+    ( _material ) => {
 
-      const mesh = new THREE.Mesh( new THREE.TorusKnotBufferGeometry( null, null, 128, 16 ), material );
+      material = _material;
 
-      scene.add( mesh );
-
-      camera.lookAt( mesh.position );
-
-      renderer.render( scene, camera );
-
-      renderer.setAnimationLoop( (  ) => {
-
-        // TODO(donmccurdy): How is TimerNode supposed to work?
-        const delta = clock.getDelta();
-        material.userData.timerNodes.forEach( ( node ) => {
-
-          node.updateFrame( { delta, time: clock.getElapsedTime() } );
-
-        } );
-
-        renderer.render( scene, camera );
-
-      } );
-
-      // debug
-      Object.assign( window, { camera, scene, renderer, material, mesh } );
+      animate();
 
     },
 
@@ -76,4 +74,35 @@
     ( e ) => console.error( e )
 
   );
+
+  function animate () {
+
+    if ( ! geometry || ! material ) return;
+
+    const mesh = new THREE.Mesh( geometry, material );
+    mesh.position.y = 1;
+
+    scene.add( mesh );
+
+    camera.lookAt( mesh.position );
+
+    renderer.render( scene, camera );
+
+    renderer.setAnimationLoop( (  ) => {
+
+      const delta = clock.getDelta();
+      material.userData.timerNodes.forEach( ( node ) => {
+
+        node.updateFrame( { delta, time: clock.getElapsedTime() } );
+
+      } );
+
+      renderer.render( scene, camera );
+
+    } );
+
+    // debug
+    Object.assign( window, { camera, scene, renderer, material, mesh } );
+
+  }
 </script>

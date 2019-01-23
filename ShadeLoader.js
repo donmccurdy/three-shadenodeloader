@@ -67,7 +67,13 @@ import {
 
 import { Noise3DNode } from './Noise3DNode.js';
 
-const InputOperator = { VALUE: 1, ADD: 2, MUL: 4 };
+const CombineMode = {
+  EQUALS: 1,
+  ADD: 2,
+  SUBTRACT: 3,
+  MULTIPLY: 4,
+  DIVIDE: 5
+};
 
 class ShadeLoader {
 
@@ -117,30 +123,48 @@ class ShadeLoader {
 
         deps.forEach( ( dep, depIndex ) => {
 
-          const [ leftID, leftProp, rightID, rightProp, options, op ] = dependencies[ nodeID ][ depIndex ];
+          const [ leftID, leftProp, rightID, rightProp, swizzle, mode ] = dependencies[ nodeID ][ depIndex ];
 
           if ( leftProp === 'sinTime' ) dep = new Math1Node( dep, Math1Node.SIN );
           if ( leftProp === 'cosTime' ) dep = new Math1Node( dep, Math1Node.COS );
 
           // Two connections can target the same node input property. It appears that the second
           // occurrence contains an operator >1, specifying how to modify the existing value.
-          switch ( op ) {
+          switch ( mode ) {
 
-            case InputOperator.VALUE:
+            case CombineMode.EQUALS:
               if ( inputs[ rightProp ] ) console.warn( `[THREE.ShadeLoader] Overwriting ".${rightProp}".` );
               inputs[ rightProp ] = dep;
               break;
 
-            case InputOperator.ADD:
+            case CombineMode.ADD:
               inputs[ rightProp ] = new OperatorNode( dep, inputs[ rightProp ], OperatorNode.ADD );
               break;
 
-            case InputOperator.MUL:
+            case CombineMode.MULTIPLY:
               inputs[ rightProp ] = new OperatorNode( dep, inputs[ rightProp ], OperatorNode.MUL );
               break;
 
             default:
-              console.warn( `[THREE.ShadeLoader] Unknown operator "${op}" for socket ".${rightProp}".` );
+              console.warn( `[THREE.ShadeLoader] Unknown combine mode "${mode}" for socket ".${rightProp}".` );
+
+          }
+
+          if ( swizzle ) {
+
+            const { r, g, b, sizeOut } = swizzle;
+            const sizeIn = ( r ? 1 : 0 ) + ( g ? 1 : 0 ) + ( b ? 1 : 0 );
+            const components = [];
+
+            if ( sizeIn > 1 ) {
+
+              if ( swizzle.r ) swizzle.r.forEach( ( c, i ) => ( components[ 'rgb'.indexOf( c ) ] = 'r' ) );
+              if ( swizzle.g ) swizzle.g.forEach( ( c, i ) => ( components[ 'rgb'.indexOf( c ) ] = 'g' ) );
+              if ( swizzle.b ) swizzle.b.forEach( ( c, i ) => ( components[ 'rgb'.indexOf( c ) ] = 'b' ) );
+
+              inputs[ rightProp ] = new SwitchNode( inputs[ rightProp ], components.join('') );
+
+            }
 
           }
 
@@ -152,12 +176,15 @@ class ShadeLoader {
         switch ( nodeDef.class ) {
           case 'SurfaceNode':
             node = new StandardNodeMaterial();
+            node.color = createParameter( nodeDef, inputs, 'diffuse' );
             node.alpha = createParameter( nodeDef, inputs, 'opacity' );
-            // TODO(donmccurdy): ThreeJS treats alphaTest as a define. In 'Dissolve'
-            // example, it's procedural. Hackz.
+            // TODO(donmccurdy): ThreeJS treats alphaTest as a macro, but we need it to be procedural.
             node.alphaTest = 0.99;
             node._alphaTest = createParameter( nodeDef, inputs, 'opacityClip' );
             node.emissive = createParameter( nodeDef, inputs, 'emissionColor' );
+            node.roughness = createParameter( nodeDef, inputs, 'rough' );
+            node.metalness = createParameter( nodeDef, inputs, 'metallic' );
+            node.ao = createParameter( nodeDef, inputs, 'occlusion' );
             break;
 
           case 'ColorNode':
@@ -207,6 +234,7 @@ class ShadeLoader {
             // TODO(donmccurdy): Maybe naming the param 'coord' not 'uv' would
             // make it clearer that it doesn't need to be a UVNode.
             const texture = new THREE.CanvasTexture( canvas );
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
             const coord = createParameter( nodeDef, inputs, 'coord' );
             node = new TextureNode( texture, coord );
             break;
@@ -313,6 +341,8 @@ class ShadeLoader {
           return new Vector2Node( value[ 0 ], value[ 1 ] );
         case 3:
           return new Vector3Node( value[ 0 ], value[ 1 ], value[ 2 ] );
+        case 4:
+          return new Vector4Node( value[ 0 ], value[ 1 ], value[ 2 ], value[ 3 ] );
       }
 
       throw new Error( `THREE.ShadeLoader: Could not create parameter, "${paramName}".` );
@@ -321,7 +351,7 @@ class ShadeLoader {
 
     json.connections.forEach( ( connection ) => {
 
-      const [ leftID, leftProp, rightID, rightProp, options, op ] = connection;
+      const [ leftID, leftProp, rightID, rightProp, swizzle, mode ] = connection;
 
       if ( dependencies[ rightID ] === undefined ) dependencies[ rightID ] = [];
 
@@ -330,13 +360,12 @@ class ShadeLoader {
       const leftNodeDef = json.nodes.find( ( node ) => node.id === leftID );
       const rightNodeDef = json.nodes.find( ( node ) => node.id === rightID );
 
-      console.log( `${leftNodeDef.options.userLabel}.${leftProp} --> ${rightNodeDef.options.userLabel}.${rightProp} <${op}>` );
+      console.log( `${leftNodeDef.options.userLabel}.${leftProp} --> ${rightNodeDef.options.userLabel}.${rightProp} <${mode}>` );
 
     } );
 
     const surfaceNodeDef = json.nodes.find( ( nodeDef ) => nodeDef.class === 'SurfaceNode' );
 
-    // TODO(donmccurdy): How is TimerNode supposed to work?
     createNode( surfaceNodeDef.id ).then( ( material ) => {
       material.userData.timerNodes = timerNodes;
       onLoad( material );
