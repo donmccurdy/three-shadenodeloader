@@ -152,8 +152,11 @@ class ShadeLoader {
         switch ( nodeDef.class ) {
           case 'SurfaceNode':
             node = new StandardNodeMaterial();
-            node.opacity = createParameter( nodeDef, inputs, 'opacity' );
-            node.alphaTest = createParameter( nodeDef, inputs, 'opacityClip' );
+            node.alpha = createParameter( nodeDef, inputs, 'opacity' );
+            // TODO(donmccurdy): ThreeJS treats alphaTest as a define. In 'Dissolve'
+            // example, it's procedural. Hackz.
+            node.alphaTest = 0.99;
+            node._alphaTest = createParameter( nodeDef, inputs, 'opacityClip' );
             node.emissive = createParameter( nodeDef, inputs, 'emissionColor' );
             break;
 
@@ -245,6 +248,8 @@ class ShadeLoader {
             break;
 
           case 'RemapNode':
+            // TODO(donmccurdy): Consider creating a new node type; easier to debug.
+            // node = new RemapNode( value, range1, range2 );
             const [ domainLow, domainHigh ] = nodeDef.inputs.arg2.value;
             const [ rangeLow, rangeHigh ] = nodeDef.inputs.arg3.value;
             const factor = ( rangeHigh - rangeLow ) / ( domainHigh - domainLow );

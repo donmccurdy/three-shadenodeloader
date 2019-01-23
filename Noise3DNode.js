@@ -30,7 +30,11 @@ Noise3DNode.Nodes = (function () {
 
 Noise3DNode.prototype.generate = function (builder, output) {
 
-  var turb_snoise3D = builder.include(Noise3DNode.Nodes.turb_snoise3D);
+  var turb_snoise3D = builder.include( Noise3DNode.Nodes.turb_snoise3D );
+
+  // TODO(donmccurdy): Because the source contains multiple functions,
+  // automatic name detection is unhappy. Better fix?
+  turb_snoise3D = 'turb_snoise3D';
 
   return builder.format( turb_snoise3D + '( ' + [
     this.value.build( builder, 'v3'),

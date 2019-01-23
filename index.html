@@ -44,10 +44,6 @@
 
     ( material ) => {
 
-      console.info( '[THREE.ShadeLoader] Loaded.' )
-
-      console.log( ( window.material = material ) );
-
       const mesh = new THREE.Mesh( new THREE.TorusKnotBufferGeometry( null, null, 128, 16 ), material );
 
       scene.add( mesh );
@@ -65,8 +61,6 @@
           node.updateFrame( { delta, time: clock.getElapsedTime() } );
 
         } );
-
-        // mesh.rotation.y += 0.1 * delta;
 
         renderer.render( scene, camera );
 
