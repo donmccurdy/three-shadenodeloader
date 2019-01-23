@@ -127,6 +127,9 @@ class ShadeLoader {
 
           if ( leftProp === 'sinTime' ) dep = new Math1Node( dep, Math1Node.SIN );
           if ( leftProp === 'cosTime' ) dep = new Math1Node( dep, Math1Node.COS );
+          if ( leftProp === 'r' ) dep = new SwitchNode( dep, 'r' );
+          if ( leftProp === 'g' ) dep = new SwitchNode( dep, 'g' );
+          if ( leftProp === 'b' ) dep = new SwitchNode( dep, 'b' );
 
           // Two connections can target the same node input property. It appears that the second
           // occurrence contains an operator >1, specifying how to modify the existing value.
@@ -171,11 +174,16 @@ class ShadeLoader {
         } );
 
         let node;
-        let skipped = true;
+        let skipped = false;
 
         switch ( nodeDef.class ) {
           case 'SurfaceNode':
             node = new StandardNodeMaterial();
+            node.position = new OperatorNode(
+              new PositionNode(),
+              createParameter( nodeDef, inputs, 'offset' ),
+              OperatorNode.ADD
+            );
             node.color = createParameter( nodeDef, inputs, 'diffuse' );
             node.alpha = createParameter( nodeDef, inputs, 'opacity' );
             // TODO(donmccurdy): ThreeJS treats alphaTest as a macro, but we need it to be procedural.
@@ -185,6 +193,11 @@ class ShadeLoader {
             node.roughness = createParameter( nodeDef, inputs, 'rough' );
             node.metalness = createParameter( nodeDef, inputs, 'metallic' );
             node.ao = createParameter( nodeDef, inputs, 'occlusion' );
+            if ( nodeDef.options.blendMode === 'additive' ) {
+              node.blending = THREE.AdditiveBlending;
+            } else if ( nodeDef.options.blendMode === 'multiply' ) {
+              node.blending = THREE.MultiplyBlending;
+            }
             break;
 
           case 'ColorNode':
@@ -304,6 +317,83 @@ class ShadeLoader {
             node = new TimerNode( 1.0 );
             timerNodes.push( node );
             break;
+
+          case 'SplitNode':
+            node = createParameter( nodeDef, inputs, 'value' );
+            break;
+
+          case 'CombineNode':
+            node = new JoinNode(
+              createParameter( nodeDef, inputs, 'valueX' ),
+              createParameter( nodeDef, inputs, 'valueY' ),
+              createParameter( nodeDef, inputs, 'valueZ' ),
+              createParameter( nodeDef, inputs, 'valueW' ),
+            );
+            break;
+
+          case 'ModNode':
+            node = new Math2Node(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              createParameter( nodeDef, inputs, 'arg2' ),
+              Math2Node.MOD
+            );
+            break;
+
+          case 'SinNode':
+            node = new Math1Node(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              Math1Node.SIN
+            );
+            break;
+
+          case 'CosNode':
+            node = new Math1Node(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              Math1Node.COS
+            );
+            break;
+
+          case 'SubtractNode':
+            node = new OperatorNode(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              createParameter( nodeDef, inputs, 'arg2' ),
+              OperatorNode.SUB
+            );
+            break;
+
+          case 'MaxNode':
+            node = new Math2Node(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              createParameter( nodeDef, inputs, 'arg2' ),
+              Math2Node.MAX
+            );
+            break;
+
+          case 'MinNode':
+            node = new Math2Node(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              createParameter( nodeDef, inputs, 'arg2' ),
+              Math2Node.MIN
+            );
+            break;
+
+          case 'DistanceNode':
+            node = new Math2Node(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              createParameter( nodeDef, inputs, 'arg2' ),
+              Math2Node.DISTANCE
+            );
+            break;
+
+          case 'SmoothstepNode':
+            node = new Math3Node(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              createParameter( nodeDef, inputs, 'arg2' ),
+              createParameter( nodeDef, inputs, 'arg3' ),
+              Math3Node.SMOOTHSTEP
+            );
+            break;
+
         }
 
         if ( ! node && ! skipped ) {
@@ -357,9 +447,9 @@ class ShadeLoader {
 
       dependencies[ rightID ].push( connection );
 
+      // debug
       const leftNodeDef = json.nodes.find( ( node ) => node.id === leftID );
       const rightNodeDef = json.nodes.find( ( node ) => node.id === rightID );
-
       console.log( `${leftNodeDef.options.userLabel}.${leftProp} --> ${rightNodeDef.options.userLabel}.${rightProp} <${mode}>` );
 
     } );
