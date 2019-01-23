@@ -65,6 +65,8 @@ import {
 
 } from './node_modules/three/examples/js/nodes/Nodes.js';
 
+import { Noise3DNode } from './Noise3DNode.js';
+
 const InputOperator = { VALUE: 1, ADD: 2, MUL: 4 };
 
 class ShadeLoader {
@@ -94,6 +96,7 @@ class ShadeLoader {
 
     const nodeCache = {};
     const dependencies = {};
+    const timerNodes = [];
 
     function createNode ( nodeID ) {
 
@@ -101,9 +104,14 @@ class ShadeLoader {
 
       const nodeDef = json.nodes.find( ( def ) => def.id === nodeID );
 
-      const pendingDeps = ( dependencies[ nodeID ] || [] ).map( ( [ leftID ] ) => createNode( leftID ) );
+      return nodeCache[nodeID] = new Promise( ( resolve ) => {
 
-      return Promise.all( pendingDeps ).then( ( deps ) => {
+        const pendingDeps = ( dependencies[ nodeID ] || [] ).map( ( [ leftID ] ) => createNode( leftID ) );
+
+        resolve( Promise.all( pendingDeps ) );
+
+      } )
+      .then( ( deps ) => {
 
         const inputs = {};
 
@@ -193,8 +201,11 @@ class ShadeLoader {
             ctx.fillStyle = gradient;
             ctx.fillRect( 0, 0, 256, 16 );
 
+            // TODO(donmccurdy): Maybe naming the param 'coord' not 'uv' would
+            // make it clearer that it doesn't need to be a UVNode.
             const texture = new THREE.CanvasTexture( canvas );
-            node = new TextureNode( texture );
+            const coord = createParameter( nodeDef, inputs, 'coord' );
+            node = new TextureNode( texture, coord );
             break;
 
           case 'GroupNode':
@@ -210,8 +221,11 @@ class ShadeLoader {
             break;
 
           case 'Noise3DNode':
-            // TODO(donmccurdy): Pretty sure this is just 2D noise.
-            node = new NoiseNode();
+            // TODO(donmccurdy): Shade Noise3D has a lot more options.
+            const lacunarity = new FloatNode( nodeDef.options.lacunarity );
+            const gain = new FloatNode( nodeDef.options.gain );
+            lacunarity.readonly = gain.readonly = true;
+            node = new Noise3DNode( createParameter( nodeDef, inputs, 'position' ), lacunarity, gain );
             break;
 
           case 'NumberNode':
@@ -227,8 +241,7 @@ class ShadeLoader {
             break;
 
           case 'PositionNode':
-            node = new PositionNode( PositionNode.LOCAL );
-            // node = new PositionNode( nodeDef.options.space === 'world' ? PositionNode.WORLD : PositionNode.LOCAL );
+            node = new PositionNode( nodeDef.options.space === 'world' ? PositionNode.WORLD : PositionNode.LOCAL );
             break;
 
           case 'RemapNode':
@@ -256,6 +269,7 @@ class ShadeLoader {
 
           case 'TimeNode':
             node = new TimerNode( 1.0 );
+            timerNodes.push( node );
             break;
         }
 
@@ -271,8 +285,6 @@ class ShadeLoader {
           node.setName( `${nodeDef.options.userLabel} <${nodeDef.name}>` );
 
         }
-
-        nodeCache[ nodeID ] = node;
 
         return node;
 
@@ -295,7 +307,7 @@ class ShadeLoader {
         case 2:
           return new Vector2Node( value[ 0 ], value[ 1 ] );
         case 3:
-          return new Vector3Node( value[ 0 ], value[ 1 ], value[ 1 ] );
+          return new Vector3Node( value[ 0 ], value[ 1 ], value[ 2 ] );
       }
 
       throw new Error( `THREE.ShadeLoader: Could not create parameter, "${paramName}".` );
@@ -319,7 +331,11 @@ class ShadeLoader {
 
     const surfaceNodeDef = json.nodes.find( ( nodeDef ) => nodeDef.class === 'SurfaceNode' );
 
-    createNode( surfaceNodeDef.id ).then( onLoad ).catch( onError );
+    // TODO(donmccurdy): How is TimerNode supposed to work?
+    createNode( surfaceNodeDef.id ).then( ( material ) => {
+      material.userData.timerNodes = timerNodes;
+      onLoad( material );
+    } ).catch( onError );
 
   }
 

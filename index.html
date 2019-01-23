@@ -55,10 +55,18 @@
       camera.lookAt( mesh.position );
 
       renderer.render( scene, camera );
-    
+
       renderer.setAnimationLoop( (  ) => {
 
-        mesh.rotation.y += 0.1 * clock.getDelta();
+        // TODO(donmccurdy): How is TimerNode supposed to work?
+        const delta = clock.getDelta();
+        material.userData.timerNodes.forEach( ( node ) => {
+
+          node.updateFrame( { delta, time: clock.getElapsedTime() } );
+
+        } );
+
+        // mesh.rotation.y += 0.1 * delta;
 
         renderer.render( scene, camera );
 

@@ -3,7 +3,9 @@
   "version": "0.0.1",
   "description": "Load shader graphs from Shade app for iOS, to three.js",
   "main": "ShadeLoader.js",
-  "scripts": {},
+  "scripts": {
+    "dev": "serve ."
+  },
   "keywords": [
     "three",
     "shaders",
