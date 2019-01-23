@@ -60,3 +60,17 @@ Would be helpful to simplify node trees, in these examples at least.
 ### Debugging tools
 
 Full visual editor would be awesome, of course, but short of that I would love to have some basic debugging tools. For example: (1) print a dependency graph, (2) display value of a given node as a 2D texture.
+
+### Organizing math nodes by number of parameters
+
+This isn't intuitive; found myself making mistakes with this often. If there's no conceptual way to organize them, can we just have a single MathNode that accepts a variable number of parameters?
+
+### Assigning PositionNode gives warnings
+
+```
+three.js:17264 THREE.WebGLProgram: gl.getProgramInfoLog() WARNING: Output of vertex shader 'vPosition' not read by fragment shader
+```
+
+### Could use an unlit node
+
+e.g. BasicNodeMaterial.
