@@ -5,7 +5,7 @@
 ![Status](https://img.shields.io/badge/status-experimental-orange.svg)
 [![License](https://img.shields.io/badge/license-MIT-007ec6.svg)](https://github.com/donmccurdy/three-shadeloader/blob/master/LICENSE)
 
-three.js loader for shader graphs from the Shade for iOS app.
+three.js loader for shaders created with Shade app for iOS.
 
 ```js
   const loader = new ShadeLoader();
