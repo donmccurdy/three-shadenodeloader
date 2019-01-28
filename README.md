@@ -1,4 +1,4 @@
-🚨 In development
+🚨 Experimental
 
 # THREE.ShadeLoader
 
