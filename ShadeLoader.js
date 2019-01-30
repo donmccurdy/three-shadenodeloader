@@ -331,6 +331,7 @@ class ShadeLoader {
             break;
 
           case 'NumberNode':
+          case 'SliderNode':
             node = createParameter( nodeDef, inputs, 'value' );
             break;
 
@@ -344,6 +345,15 @@ class ShadeLoader {
 
           case 'PositionNode':
             node = new PositionNode( nodeDef.options.space === 'world' ? PositionNode.WORLD : PositionNode.LOCAL );
+            break;
+
+          case 'NormalNode':
+            node = new NormalNode();
+            break;
+
+          case 'UVNode':
+            // TODO(donmccurdy): Also has tiling and offset.
+            node = new UVNode();
             break;
 
           case 'RemapNode':
@@ -402,6 +412,20 @@ class ShadeLoader {
             );
             break;
 
+          case 'FloorNode':
+            node = new Math1Node(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              Math1Node.FLOOR
+            );
+            break;
+
+          case 'CeilNode':
+            node = new Math1Node(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              Math1Node.CEIL
+            );
+            break;
+
           case 'MaxNode':
             node = new Math2Node(
               createParameter( nodeDef, inputs, 'arg1' ),
@@ -423,6 +447,24 @@ class ShadeLoader {
               createParameter( nodeDef, inputs, 'arg1' ),
               createParameter( nodeDef, inputs, 'arg2' ),
               Math2Node.DISTANCE
+            );
+            break;
+
+          case 'MixNode':
+            node = new Math3Node(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              createParameter( nodeDef, inputs, 'arg2' ),
+              createParameter( nodeDef, inputs, 'arg3' ),
+              Math3Node.MIX
+            );
+            break;
+
+          case 'ClampNode':
+            node = new Math3Node(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              createParameter( nodeDef, inputs, 'arg2' ),
+              createParameter( nodeDef, inputs, 'arg3' ),
+              Math3Node.CLAMP
             );
             break;
 
