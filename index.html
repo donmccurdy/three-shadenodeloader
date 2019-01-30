@@ -104,7 +104,7 @@
 
     if ( ! suzanneGeometry || ! material ) return;
 
-    geometry = selectedExample.model === 'suzanne' ? suzanneGeometry : boxGeometry;
+    geometry = selectedExample.prop === 'suzanne' ? suzanneGeometry : boxGeometry;
 
     populateInstances();
 

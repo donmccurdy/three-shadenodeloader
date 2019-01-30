@@ -11,9 +11,9 @@ function Noise2DNode( node, lacunarity, gain, type ) {
   TempNode.call(this, 'f');
 
   this.value = node;
-  this.lacunarity = lacunarity;
-  this.gain = gain;
-  this.type = type || Noise2DNode.CLASSIC;
+  // this.lacunarity = lacunarity;
+  // this.gain = gain;
+  // this.type = type || Noise2DNode.CLASSIC;
 
 }
 
@@ -66,9 +66,9 @@ Noise2DNode.prototype.toJSON = function (meta) {
     data = this.createJSONNode(meta);
 
     data.value = this.value.toJSON(meta).uuid;
-    data.lacunarity = this.lacunarity.toJSON(meta).uuid;
-    data.gain = this.gain.toJSON(meta).uuid;
-    data.type = this.type;
+    // data.lacunarity = this.lacunarity.toJSON(meta).uuid;
+    // data.gain = this.gain.toJSON(meta).uuid;
+    // data.type = this.type;
 
   }
 
