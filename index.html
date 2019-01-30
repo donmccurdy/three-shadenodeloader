@@ -26,7 +26,7 @@
 
   const scene = new THREE.Scene();
 
-  const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.01, 25 );
+  const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.01, 100 );
   camera.position.set( 5, 3, 4 );
   scene.add( camera );
 
@@ -45,21 +45,23 @@
 
   let mesh, geometry, material;
 
-  const modelLoader = new THREE.GLTFLoader();
+  geometry = new THREE.BoxBufferGeometry(1.8, 1.8, 1.8);
 
-  modelLoader.load( 'assets/Suzanne.glb', ( { scene } ) => {
+  // const modelLoader = new THREE.GLTFLoader();
 
-    geometry = scene.children[ 0 ].geometry;
+  // modelLoader.load( 'assets/Suzanne.glb', ( { scene } ) => {
 
-    animate();
+  //   geometry = scene.children[ 0 ].geometry;
 
-  } );
+  //   animate();
+
+  // } );
 
   const loader = new ShadeLoader();
 
   loader.load(
 
-    'shaders/Dissolve/Graph.json',
+    'shaders/InstancingGrid/Graph.json',
 
     ( _material ) => {
 
@@ -78,6 +80,8 @@
   function animate () {
 
     if ( ! geometry || ! material ) return;
+
+    populateInstances();
 
     const mesh = new THREE.Mesh( geometry, material );
     mesh.position.y = 1;
@@ -103,6 +107,23 @@
 
     // debug
     Object.assign( window, { camera, scene, renderer, material, mesh } );
+
+  }
+
+  function populateInstances () {
+
+    const instanceCount = material.userData.instanceCount;
+
+    if ( instanceCount <= 1 ) return;
+
+    const instanceID = new THREE.InstancedBufferAttribute(
+      new Float32Array( new Array( instanceCount ).fill( 0 ).map( ( _, index ) => index ) ),
+      1
+    );
+
+    geometry = new THREE.InstancedBufferGeometry().copy( geometry );
+    geometry.addAttribute( 'instanceID', instanceID );
+    geometry.maxInstancedCount = instanceCount;
 
   }
 </script>

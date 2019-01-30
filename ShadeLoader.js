@@ -65,7 +65,9 @@ import {
 
 } from './node_modules/three/examples/js/nodes/Nodes.js';
 
+import { Noise2DNode } from './Noise2DNode.js';
 import { Noise3DNode } from './Noise3DNode.js';
+import { RemapNode } from './RemapNode.js';
 
 const CombineMode = {
   EQUALS: 1,
@@ -103,6 +105,13 @@ class ShadeLoader {
     const nodeCache = {};
     const dependencies = {};
     const timerNodes = [];
+    const instanceCountNodes = [];
+
+    const ZERO = new FloatNode( 0.0 );
+    const ONE = new FloatNode( 1.0 );
+    ZERO.name = 'ZERO';
+    ONE.name = 'ONE';
+    ZERO.readonly = ONE.readonly = true;
 
     function createNode ( nodeID ) {
 
@@ -131,6 +140,32 @@ class ShadeLoader {
           if ( leftProp === 'g' ) dep = new SwitchNode( dep, 'g' );
           if ( leftProp === 'b' ) dep = new SwitchNode( dep, 'b' );
 
+          if ( swizzle ) {
+
+            const { r, g, b, sizeOut } = swizzle;
+            const sizeIn = ( r ? 1 : 0 ) + ( g ? 1 : 0 ) + ( b ? 1 : 0 );
+            const components = [];
+
+            if ( sizeIn > 1 ) {
+
+              if ( r ) r.forEach( ( c, i ) => ( components[ 'rgb'.indexOf( c ) ] = 'r' ) );
+              if ( g ) g.forEach( ( c, i ) => ( components[ 'rgb'.indexOf( c ) ] = 'g' ) );
+              if ( b ) b.forEach( ( c, i ) => ( components[ 'rgb'.indexOf( c ) ] = 'b' ) );
+
+              dep = new SwitchNode( dep, components.join('') );
+
+            } else {
+
+              dep = new JoinNode(
+                r.indexOf( 'r' ) >= 0 ? dep : ZERO,
+                r.indexOf( 'g' ) >= 0 ? dep : ZERO,
+                sizeOut > 2 ? ( r.indexOf( 'b' ) >= 0 ? dep : ZERO ) : undefined
+              );
+
+            }
+
+          }
+
           // Two connections can target the same node input property. It appears that the second
           // occurrence contains an operator >1, specifying how to modify the existing value.
           switch ( mode ) {
@@ -141,33 +176,23 @@ class ShadeLoader {
               break;
 
             case CombineMode.ADD:
-              inputs[ rightProp ] = new OperatorNode( dep, inputs[ rightProp ], OperatorNode.ADD );
+              inputs[ rightProp ] = new OperatorNode( inputs[ rightProp ], dep, OperatorNode.ADD );
+              break;
+
+            case CombineMode.SUBTRACT:
+              inputs[ rightProp ] = new OperatorNode( inputs[ rightProp ], dep, OperatorNode.SUB );
               break;
 
             case CombineMode.MULTIPLY:
-              inputs[ rightProp ] = new OperatorNode( dep, inputs[ rightProp ], OperatorNode.MUL );
+              inputs[ rightProp ] = new OperatorNode( inputs[ rightProp ], dep, OperatorNode.MUL );
+              break;
+
+            case CombineMode.DIVIDE:
+              inputs[ rightProp ] = new OperatorNode( inputs[ rightProp ], dep, OperatorNode.DIV );
               break;
 
             default:
               console.warn( `[THREE.ShadeLoader] Unknown combine mode "${mode}" for socket ".${rightProp}".` );
-
-          }
-
-          if ( swizzle ) {
-
-            const { r, g, b, sizeOut } = swizzle;
-            const sizeIn = ( r ? 1 : 0 ) + ( g ? 1 : 0 ) + ( b ? 1 : 0 );
-            const components = [];
-
-            if ( sizeIn > 1 ) {
-
-              if ( swizzle.r ) swizzle.r.forEach( ( c, i ) => ( components[ 'rgb'.indexOf( c ) ] = 'r' ) );
-              if ( swizzle.g ) swizzle.g.forEach( ( c, i ) => ( components[ 'rgb'.indexOf( c ) ] = 'g' ) );
-              if ( swizzle.b ) swizzle.b.forEach( ( c, i ) => ( components[ 'rgb'.indexOf( c ) ] = 'b' ) );
-
-              inputs[ rightProp ] = new SwitchNode( inputs[ rightProp ], components.join('') );
-
-            }
 
           }
 
@@ -204,6 +229,9 @@ class ShadeLoader {
             node = new ColorNode( new THREE.Color().fromArray ( nodeDef.inputs.value.value ) );
             break;
 
+          case 'RelayNode':
+          case 'Vector2DNode':
+          case 'Vector3DNode':
           case 'CreateLocalVarNode':
             node = createParameter( nodeDef, inputs, 'value' );
             break;
@@ -256,6 +284,22 @@ class ShadeLoader {
             skipped = true;
             break;
 
+          case 'AddNode':
+            node = new OperatorNode(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              createParameter( nodeDef, inputs, 'arg2' ),
+              OperatorNode.ADD
+            );
+            break;
+
+          case 'SubtractNode':
+            node = new OperatorNode(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              createParameter( nodeDef, inputs, 'arg2' ),
+              OperatorNode.SUB
+            );
+            break;
+
           case 'MultiplyNode':
             node = new OperatorNode(
               createParameter( nodeDef, inputs, 'arg1' ),
@@ -264,8 +308,22 @@ class ShadeLoader {
             );
             break;
 
+          case 'DivideNode':
+            node = new OperatorNode(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              createParameter( nodeDef, inputs, 'arg2' ),
+              OperatorNode.DIV
+            );
+            break;
+
+          case 'Noise2DNode':
+            // TODO(donmccurdy): Shade Noise2D has additional options.
+            // TODO(donmccurdy): Set 'repeat' on the noise?
+            node = new Noise2DNode( createParameter( nodeDef, inputs, 'position' ) );
+            break;
+
           case 'Noise3DNode':
-            // TODO(donmccurdy): Shade Noise3D has a lot more options.
+            // TODO(donmccurdy): Shade Noise3D has additional options.
             const lacunarity = new FloatNode( nodeDef.options.lacunarity );
             const gain = new FloatNode( nodeDef.options.gain );
             lacunarity.readonly = gain.readonly = true;
@@ -273,7 +331,7 @@ class ShadeLoader {
             break;
 
           case 'NumberNode':
-            node = new FloatNode( nodeDef.inputs.value.value );
+            node = createParameter( nodeDef, inputs, 'value' );
             break;
 
           case 'OneMinusNode':
@@ -289,19 +347,10 @@ class ShadeLoader {
             break;
 
           case 'RemapNode':
-            // TODO(donmccurdy): Consider creating a new node type; easier to debug.
-            // node = new RemapNode( value, range1, range2 );
-            const [ domainLow, domainHigh ] = nodeDef.inputs.arg2.value;
-            const [ rangeLow, rangeHigh ] = nodeDef.inputs.arg3.value;
-            const factor = ( rangeHigh - rangeLow ) / ( domainHigh - domainLow );
-            node = new OperatorNode(
-              new OperatorNode(
-                new OperatorNode( createParameter( nodeDef, inputs, 'arg1' ), new FloatNode( domainLow ), OperatorNode.SUB ),
-                new FloatNode( factor ),
-                OperatorNode.MUL
-              ),
-              new FloatNode( rangeLow ),
-              OperatorNode.ADD
+            node = new RemapNode(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              createParameter( nodeDef, inputs, 'arg2' ),
+              createParameter( nodeDef, inputs, 'arg3' ),
             );
             break;
 
@@ -353,14 +402,6 @@ class ShadeLoader {
             );
             break;
 
-          case 'SubtractNode':
-            node = new OperatorNode(
-              createParameter( nodeDef, inputs, 'arg1' ),
-              createParameter( nodeDef, inputs, 'arg2' ),
-              OperatorNode.SUB
-            );
-            break;
-
           case 'MaxNode':
             node = new Math2Node(
               createParameter( nodeDef, inputs, 'arg1' ),
@@ -394,6 +435,15 @@ class ShadeLoader {
             );
             break;
 
+          case 'InstanceIDNode':
+            node = new AttributeNode( 'instanceID', 'float' );
+            break;
+
+          case 'InstanceCountNode':
+            node = new FloatNode( 1.0 );
+            instanceCountNodes.push( node );
+            break;
+
         }
 
         if ( ! node && ! skipped ) {
@@ -403,7 +453,7 @@ class ShadeLoader {
 
         }
 
-        if ( node.setName ) {
+        if ( node.setName && node.nodeType !== 'Attribute' ) {
 
           node.setName( `${nodeDef.options.userLabel} <${nodeDef.name}>` );
 
@@ -457,6 +507,14 @@ class ShadeLoader {
     const surfaceNodeDef = json.nodes.find( ( nodeDef ) => nodeDef.class === 'SurfaceNode' );
 
     createNode( surfaceNodeDef.id ).then( ( material ) => {
+
+      if ( surfaceNodeDef.options.instanceCount > 1 ) {
+
+        instanceCountNodes.forEach( ( node ) => ( node.value = surfaceNodeDef.options.instanceCount ) );
+
+      }
+
+      material.userData.instanceCount = surfaceNodeDef.options.instanceCount;
       material.userData.timerNodes = timerNodes;
       onLoad( material );
     } ).catch( onError );
