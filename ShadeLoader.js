@@ -65,9 +65,9 @@ import {
 
 } from './node_modules/three/examples/js/nodes/Nodes.js';
 
-import { Noise2DNode } from './Noise2DNode.js';
-import { Noise3DNode } from './Noise3DNode.js';
-import { RemapNode } from './RemapNode.js';
+import { Noise2DNode } from './nodes/Noise2DNode.js';
+import { Noise3DNode } from './nodes/Noise3DNode.js';
+import { RemapNode } from './nodes/RemapNode.js';
 
 const CombineMode = {
   EQUALS: 1,

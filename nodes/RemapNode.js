@@ -2,8 +2,8 @@
  * @author Don McCurdy / https://www.donmccurdy.com
  */
 
-import { TempNode } from './node_modules/three/examples/js/nodes/core/TempNode.js';
-import { FunctionNode } from './node_modules/three/examples/js/nodes/core/FunctionNode.js';
+import { TempNode } from '../node_modules/three/examples/js/nodes/core/TempNode.js';
+import { FunctionNode } from '../node_modules/three/examples/js/nodes/core/FunctionNode.js';
 
 const src = `
 float remap ( float value, vec2 domain, vec2 range ) {

@@ -2,9 +2,9 @@
  * @author sunag / http://www.sunag.com.br/
  */
 
-import { TempNode } from './node_modules/three/examples/js/nodes/core/TempNode.js';
-import { FunctionNode } from './node_modules/three/examples/js/nodes/core/FunctionNode.js';
-import { snoise } from './lib/noise2D.glsl.js';
+import { TempNode } from '../node_modules/three/examples/js/nodes/core/TempNode.js';
+import { FunctionNode } from '../node_modules/three/examples/js/nodes/core/FunctionNode.js';
+import { snoise } from './shaders/noise2D.glsl.js';
 
 function Noise2DNode( node, lacunarity, gain, type ) {
 
