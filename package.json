@@ -19,6 +19,7 @@
     "three": "^0.100.0"
   },
   "devDependencies": {
+    "dat.gui": "^0.7.5",
     "serve": "^10.1.1"
   }
 }
