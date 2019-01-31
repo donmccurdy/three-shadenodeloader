@@ -210,10 +210,11 @@ class ShadeLoader {
               OperatorNode.ADD
             );
             node.color = createParameter( nodeDef, inputs, 'diffuse' );
-            node.alpha = createParameter( nodeDef, inputs, 'opacity' );
-            // TODO(donmccurdy): ThreeJS treats alphaTest as a macro, but we need it to be procedural.
-            node.alphaTest = 0.99;
-            node._alphaTest = createParameter( nodeDef, inputs, 'opacityClip' );
+            node.mask = new CondNode(
+              createParameter( nodeDef, inputs, 'opacity' ),
+              createParameter( nodeDef, inputs, 'opacityClip' ),
+              CondNode.GREATER
+            );
             node.emissive = createParameter( nodeDef, inputs, 'emissionColor' );
             node.roughness = createParameter( nodeDef, inputs, 'rough' );
             node.metalness = createParameter( nodeDef, inputs, 'metallic' );

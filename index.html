@@ -29,8 +29,14 @@
 
   const examples = [
     {name: 'Hologram', shader: 'assets/Hologram/Graph.json', prop: 'suzanne'},
+    {name: 'Instancing Grid', shader: 'assets/InstancingGrid/Graph.json', prop: 'cube'},
     {name: 'Dissolve', shader: 'assets/Dissolve/Graph.json', prop: 'suzanne'},
-    {name: 'Instancing Grid', shader: 'assets/InstancingGrid/Graph.json', prop: 'cube'}
+    {name: 'Fake Volume', shader: 'assets/FakeVolume/Graph.json', prop: 'cube'},
+    {name: '[broken] Checkers', shader: 'assets/Checkers/Graph.json', prop: 'cube'},
+    {name: '[broken] Clouds', shader: 'assets/Clouds/Graph.json', prop: 'cube'},
+    {name: '[broken] Grass', shader: 'assets/Grass/Graph.json', prop: 'cube'},
+    {name: '[broken] Mask Blend', shader: 'assets/MaskBlend/Graph.json', prop: 'cube'},
+    {name: '[broken] Wire Ripple', shader: 'assets/WireRipple/Graph.json', prop: 'cube'},
   ];
   let selectedExample = examples[ 0 ];
   const api = { model: selectedExample.name };
