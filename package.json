@@ -16,7 +16,7 @@
   "author": "Don McCurdy <dm@donmccurdy.com>",
   "license": "MIT",
   "dependencies": {
-    "three": "^0.100.0"
+    "three": "^0.101.1"
   },
   "devDependencies": {
     "dat.gui": "^0.7.5",
