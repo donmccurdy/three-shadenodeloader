@@ -25,14 +25,20 @@
   renderer.gammaFactor = 2.2;
   document.body.appendChild( renderer.domElement );
 
-  let mesh, geometry, boxGeometry, suzanneGeometry, material;
+  let mesh, geometry, material;
+
+  const props = {
+    suzanne: null,
+    cube: new THREE.BoxBufferGeometry(1.8, 1.8, 1.8),
+    sphere: new THREE.SphereBufferGeometry( 1.8, 32, 32 )
+  };
 
   const examples = [
+    {name: 'Dissolve', shader: 'assets/Dissolve/Graph.json', prop: 'suzanne'},
+    {name: 'Fake Volume', shader: 'assets/FakeVolume/Graph.json', prop: 'sphere'},
     {name: 'Hologram', shader: 'assets/Hologram/Graph.json', prop: 'suzanne'},
     {name: 'Instancing Grid', shader: 'assets/InstancingGrid/Graph.json', prop: 'cube'},
-    {name: 'Dissolve', shader: 'assets/Dissolve/Graph.json', prop: 'suzanne'},
-    {name: 'Fake Volume', shader: 'assets/FakeVolume/Graph.json', prop: 'cube'},
-    {name: '[broken] Checkers', shader: 'assets/Checkers/Graph.json', prop: 'cube'},
+    {name: 'Checkers', shader: 'assets/Checkers/Graph.json', prop: 'cube'},
     {name: '[broken] Clouds', shader: 'assets/Clouds/Graph.json', prop: 'cube'},
     {name: '[broken] Grass', shader: 'assets/Grass/Graph.json', prop: 'cube'},
     {name: '[broken] Mask Blend', shader: 'assets/MaskBlend/Graph.json', prop: 'cube'},
@@ -57,7 +63,7 @@
 
   const controls = new THREE.OrbitControls( camera, renderer.domElement );
 
-  const hemiLight = new THREE.HemisphereLight( 0x4488AA, 0x22DD77, 1.0 );
+  const hemiLight = new THREE.HemisphereLight( 0xDDBBBB, 0xBBBBDD, 1.0 );
   scene.add( hemiLight );
 
   const directLight = new THREE.PointLight( 0x888888, 1.0 );
@@ -68,13 +74,11 @@
 
   const clock = new THREE.Clock();
 
-  boxGeometry = new THREE.BoxBufferGeometry(1.8, 1.8, 1.8);
-
   const modelLoader = new THREE.GLTFLoader();
 
   modelLoader.load( 'assets/Suzanne.glb', ( { scene } ) => {
 
-    suzanneGeometry = scene.children[ 0 ].geometry;
+    props.suzanne = scene.children[ 0 ].geometry;
 
     animate();
 
@@ -108,9 +112,9 @@
 
   function animate () {
 
-    if ( ! suzanneGeometry || ! material ) return;
+    if ( ! props.suzanne || ! material ) return;
 
-    geometry = selectedExample.prop === 'suzanne' ? suzanneGeometry : boxGeometry;
+    geometry = props[selectedExample.prop];
 
     populateInstances();
 

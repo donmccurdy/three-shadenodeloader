@@ -11,6 +11,24 @@ float remap ( float value, vec2 domain, vec2 range ) {
     return range.x + ( value - domain.x ) * ( range.y - range.x ) / ( domain.y - domain.x );
 
 }
+
+vec2 remap ( vec2 value, vec2 domain, vec2 range ) {
+
+    return range.x + ( value - domain.x ) * ( range.y - range.x ) / ( domain.y - domain.x );
+
+}
+
+vec3 remap ( vec3 value, vec2 domain, vec2 range ) {
+
+    return range.x + ( value - domain.x ) * ( range.y - range.x ) / ( domain.y - domain.x );
+
+}
+
+vec4 remap ( vec4 value, vec2 domain, vec2 range ) {
+
+    return range.x + ( value - domain.x ) * ( range.y - range.x ) / ( domain.y - domain.x );
+
+}
 `;
 
 function RemapNode( node, domain, range ) {
@@ -40,10 +58,16 @@ RemapNode.prototype.generate = function (builder, output) {
   var remap = builder.include( RemapNode.Nodes.remap );
 
   return builder.format( remap + '( ' + [
-    this.value.build( builder, 'f'),
+    this.value.build( builder ),
     this.domain.build(builder, 'vec2'),
     this.range.build(builder, 'vec2')
   ].join(', ') + ' )', this.getType( builder ), output );
+
+};
+
+RemapNode.prototype.getType = function ( builder ) {
+
+  return this.value.getType( builder );
 
 };
 

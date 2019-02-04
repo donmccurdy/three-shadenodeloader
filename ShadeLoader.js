@@ -224,6 +224,16 @@ class ShadeLoader {
             } else if ( nodeDef.options.blendMode === 'multiply' ) {
               node.blending = THREE.MultiplyBlending;
             }
+            node.side = nodeDef.cullFace === 'none' ? THREE.DoubleSide : THREE.FrontSide;
+            break;
+
+          case 'PropNode':
+            // TODO(donmccurdy): Include visible properties?
+            node = new Vector3Node(
+              nodeDef.options.position[ 0 ],
+              nodeDef.options.position[ 1 ],
+              nodeDef.options.position[ 2 ]
+            );
             break;
 
           case 'ColorNode':
@@ -273,8 +283,6 @@ class ShadeLoader {
             ctx.fillStyle = gradient;
             ctx.fillRect( 0, 0, 256, 16 );
 
-            // TODO(donmccurdy): Maybe naming the param 'coord' not 'uv' would
-            // make it clearer that it doesn't need to be a UVNode.
             const texture = new THREE.CanvasTexture( canvas );
             texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
             const coord = createParameter( nodeDef, inputs, 'coord' );
@@ -353,8 +361,15 @@ class ShadeLoader {
             break;
 
           case 'UVNode':
-            // TODO(donmccurdy): Also has tiling and offset.
             node = new UVNode();
+            const tiling = createParameter( nodeDef, inputs, 'tiling' );
+            if ( tiling.x !== 1 || tiling.y !== 1 ) {
+              node = new OperatorNode( node, tiling, OperatorNode.MUL );
+            }
+            const offset = createParameter( nodeDef, inputs, 'offset' );
+            if ( offset.x !== 0 || offset.y !== 0 ) {
+              node = new OperatorNode( node, offset, OperatorNode.ADD );
+            }
             break;
 
           case 'RemapNode':
@@ -370,6 +385,15 @@ class ShadeLoader {
               createParameter( nodeDef, inputs, 'arg1' ),
               createParameter( nodeDef, inputs, 'arg2' ),
               Math2Node.STEP
+            );
+            break;
+
+
+          case 'PowNode':
+            node = new Math2Node(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              createParameter( nodeDef, inputs, 'arg2' ),
+              Math2Node.POW
             );
             break;
 
@@ -424,6 +448,13 @@ class ShadeLoader {
             node = new Math1Node(
               createParameter( nodeDef, inputs, 'arg1' ),
               Math1Node.CEIL
+            );
+            break;
+
+          case 'SqrtNode':
+            node = new Math1Node(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              Math1Node.SQRT
             );
             break;
 
