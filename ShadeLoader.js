@@ -106,12 +106,14 @@ class ShadeLoader {
     const dependencies = {};
     const timerNodes = [];
     const instanceCountNodes = [];
+    let needsDerivatives = false;
 
-    const ZERO = new FloatNode( 0.0 );
-    const ONE = new FloatNode( 1.0 );
-    ZERO.name = 'ZERO';
-    ONE.name = 'ONE';
-    ZERO.readonly = ONE.readonly = true;
+    const ZERO = new FloatNode( 0.0 )
+      .setLabel('ZERO')
+      .setReadonly(true);
+    const ONE = new FloatNode( 1.0 )
+      .setLabel('ONE')
+      .setReadonly(true);
 
     function createNode ( nodeID ) {
 
@@ -458,6 +460,27 @@ class ShadeLoader {
             );
             break;
 
+          case 'LengthNode':
+            node = new Math1Node(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              Math1Node.LENGTH
+            );
+            break;
+
+          case 'FractNode':
+            node = new Math1Node(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              Math1Node.FRACT
+            );
+            break;
+
+          case 'AbsNode':
+            node = new Math1Node(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              Math1Node.ABS
+            );
+            break;
+
           case 'MaxNode':
             node = new Math2Node(
               createParameter( nodeDef, inputs, 'arg1' ),
@@ -509,6 +532,17 @@ class ShadeLoader {
             );
             break;
 
+          case 'FWidthNode':
+            // TODO(donmccurdy): Make a proper API.
+            node = new Math1Node( createParameter( nodeDef, inputs, 'value' ), 'fwidth' );
+            needsDerivatives = true;
+            break;
+
+          case 'MicNode':
+            // TODO(donmccurdy): Boringgg.
+            node = new FloatNode( 0.01 );
+            break;
+
           case 'InstanceIDNode':
             node = new AttributeNode( 'instanceID', 'float' );
             break;
@@ -527,9 +561,9 @@ class ShadeLoader {
 
         }
 
-        if ( node.setName && node.nodeType !== 'Attribute' ) {
+        if ( node.setLabel ) {
 
-          node.setName( `${nodeDef.options.userLabel} <${nodeDef.name}>` );
+          node.setLabel( sanitizeLabel( nodeDef.options.userLabel ) );
 
         }
 
@@ -589,11 +623,32 @@ class ShadeLoader {
       }
 
       material.userData.instanceCount = surfaceNodeDef.options.instanceCount;
+      material.userData.needsDerivatives = needsDerivatives;
       material.userData.timerNodes = timerNodes;
       onLoad( material );
     } ).catch( onError );
 
   }
+
+}
+
+const labels = {};
+
+function sanitizeLabel ( label ) {
+
+  label = label
+    .replace(/[^\w_-]+/g, '' )
+    .toLowerCase();
+
+  let i = 1;
+
+  while ( labels[ `${label}_${i}` ] === true ) i++;
+
+  label = `${label}_${i}`;
+
+  labels[ label ] = true;
+
+  return label;
 
 }
 
