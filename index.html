@@ -42,18 +42,18 @@
 
   const examples = [
 
-    {name: 'Checkers', shader: 'assets/Checkers/Graph.json', prop: 'cube'},
-    {name: 'Dissolve', shader: 'assets/Dissolve/Graph.json', prop: 'suzanne'},
-    {name: 'Fake Volume', shader: 'assets/FakeVolume/Graph.json', prop: 'sphere'},
-    {name: 'Grass', shader: 'assets/Grass/Graph.json', prop: 'grass'},
-    {name: 'Hologram', shader: 'assets/Hologram/Graph.json', prop: 'suzanne'},
-    {name: 'Instancing Grid', shader: 'assets/InstancingGrid/Graph.json', prop: 'roundedCube'},
-    {name: 'Wire Ripple', shader: 'assets/WireRipple/Graph.json', prop: 'plane'},
-    {name: 'Wireframe', shader: 'assets/Wireframe/Graph.json', prop: 'sphere'},
-    {name: '[broken] Clouds', shader: 'assets/Clouds/Graph.json', prop: 'cube'},
-    {name: '[broken] Explosion', shader: 'assets/Explosion/Graph.json', prop: 'sphere'},
-    {name: '[broken] Mask Blend', shader: 'assets/MaskBlend/Graph.json', prop: 'cube'},
-    {name: '[broken] Ripple', shader: 'assets/Ripple/Graph.json', prop: 'plane'},
+    {name: 'Checkers', shader: 'assets/shaders/Checkers/Graph.json', prop: 'cube'},
+    {name: 'Dissolve', shader: 'assets/shaders/Dissolve/Graph.json', prop: 'suzanne'},
+    {name: 'Fake Volume', shader: 'assets/shaders/FakeVolume/Graph.json', prop: 'sphere'},
+    {name: 'Grass', shader: 'assets/shaders/Grass/Graph.json', prop: 'grass'},
+    {name: 'Hologram', shader: 'assets/shaders/Hologram/Graph.json', prop: 'suzanne'},
+    {name: 'Instancing Grid', shader: 'assets/shaders/InstancingGrid/Graph.json', prop: 'roundedCube'},
+    {name: 'Wire Ripple', shader: 'assets/shaders/WireRipple/Graph.json', prop: 'plane'},
+    {name: 'Wireframe', shader: 'assets/shaders/Wireframe/Graph.json', prop: 'sphere'},
+    {name: '[broken] Clouds', shader: 'assets/shaders/Clouds/Graph.json', prop: 'cube'},
+    {name: '[broken] Explosion', shader: 'assets/shaders/Explosion/Graph.json', prop: 'sphere'},
+    {name: '[broken] Mask Blend', shader: 'assets/shaders/MaskBlend/Graph.json', prop: 'cube'},
+    {name: '[broken] Ripple', shader: 'assets/shaders/Ripple/Graph.json', prop: 'plane'},
 
   ];
   let selectedExample = examples[ 0 ];
@@ -96,7 +96,7 @@
 
   } );
 
-  modelLoader.load( 'assets/grassBlade.glb', ( { scene } ) => {
+  modelLoader.load( 'assets/GrassBlade.glb', ( { scene } ) => {
 
     props.grass = scene.children[ 0 ].geometry;
 
@@ -104,7 +104,7 @@
 
   } );
 
-  modelLoader.load( 'assets/roundedCube.glb', ( { scene } ) => {
+  modelLoader.load( 'assets/RoundedCube.glb', ( { scene } ) => {
 
     props.roundedCube = scene.children[ 0 ].geometry;
 
