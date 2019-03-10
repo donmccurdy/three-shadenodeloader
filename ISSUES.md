@@ -46,3 +46,7 @@ ERROR: 0:768: 'assign' : cannot convert from 'highp 4-component vector of float'
 ```
 
 Maybe this is baked into ColorSpaceNode? See hack in BlendNormalsNode...
+
+## Confused about v3 vs vec3
+
+Seems to be used both ways, but e.g. AttributeNode works with 'vec3' and not 'v3'.

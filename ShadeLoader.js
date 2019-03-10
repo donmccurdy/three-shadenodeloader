@@ -131,6 +131,7 @@ class ShadeLoader {
     const dependencies = {};
     const instanceCountNodes = [];
     let needsDerivatives = false;
+    let needsBarycentric = false;
 
     const ZERO = new FloatNode( 0.0 )
       .setLabel('ZERO')
@@ -406,6 +407,11 @@ class ShadeLoader {
             if ( offset.x !== 0 || offset.y !== 0 ) {
               node = new OperatorNode( node, offset, OperatorNode.ADD );
             }
+            break;
+
+          case 'BarycentricNode':
+            node = new AttributeNode( 'barycentric', 'vec3' );
+            needsBarycentric = true;
             break;
 
           case 'RemapNode':
@@ -684,6 +690,7 @@ class ShadeLoader {
 
       material.userData.instanceCount = surfaceNodeDef.options.instanceCount;
       material.userData.needsDerivatives = needsDerivatives;
+      material.userData.needsBarycentric = needsBarycentric;
       onLoad( material );
     } ).catch( onError );
 

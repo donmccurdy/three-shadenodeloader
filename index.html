@@ -40,20 +40,17 @@
 
   const examples = [
 
-
-
     {name: 'Dissolve', shader: 'assets/Dissolve/Graph.json', prop: 'suzanne'},
     {name: 'Fake Volume', shader: 'assets/FakeVolume/Graph.json', prop: 'sphere'},
     {name: 'Hologram', shader: 'assets/Hologram/Graph.json', prop: 'suzanne'},
     {name: 'Instancing Grid', shader: 'assets/InstancingGrid/Graph.json', prop: 'cube'},
     {name: 'Checkers', shader: 'assets/Checkers/Graph.json', prop: 'cube'},
     {name: 'Wire Ripple', shader: 'assets/WireRipple/Graph.json', prop: 'plane'},
-    {name: '[partial] Ripple', shader: 'assets/Ripple/Graph.json', prop: 'plane'},
+    {name: 'Wireframe', shader: 'assets/Wireframe/Graph.json', prop: 'sphere'},
+    {name: '[broken] Ripple', shader: 'assets/Ripple/Graph.json', prop: 'plane'},
     {name: '[broken] Clouds', shader: 'assets/Clouds/Graph.json', prop: 'cube'},
     {name: '[broken] Grass', shader: 'assets/Grass/Graph.json', prop: 'cube'},
     {name: '[broken] Mask Blend', shader: 'assets/MaskBlend/Graph.json', prop: 'cube'},
-    {name: '[broken] Wireframe', shader: 'assets/Wireframe/Graph.json', prop: 'sphere'},
-
 
   ];
   let selectedExample = examples[ 0 ];
@@ -159,6 +156,25 @@
         material.extensions.derivatives = true;
 
       };
+
+    }
+
+    if ( material.userData.needsBarycentric ) {
+
+      geometry = window.geometry = geometry.toNonIndexed();
+
+      const vertexCount = geometry.attributes.position.count;
+      const barycentric = new THREE.BufferAttribute( new Uint16Array( vertexCount * 3 ), 3 );
+
+      for ( let i = 0; i < geometry.attributes.position.count; i += 3 ) {
+
+        barycentric.setXYZ( i, 1, 0, 0 );
+        barycentric.setXYZ( i + 1, 0, 1, 0 );
+        barycentric.setXYZ( i + 2, 0, 0, 1 );
+
+      }
+
+      geometry.addAttribute( 'barycentric', barycentric );
 
     }
 
