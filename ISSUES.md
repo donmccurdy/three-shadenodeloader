@@ -4,6 +4,8 @@
 
 Ideally:
 
+- BlendNormalsNode
+- HeightToNormalNode
 - RemapNode
 - Noise2DNode
 - Noise3DNode
@@ -35,3 +37,12 @@ This isn't intuitive; found myself making mistakes with this often. If there's n
 three.js:17264 THREE.WebGLProgram: gl.getProgramInfoLog() WARNING: Output of vertex shader 'vPosition' not read by fragment shader
 ```
 
+## TextureNode assumes v4
+
+Struggling to get around:
+
+```
+ERROR: 0:768: 'assign' : cannot convert from 'highp 4-component vector of float' to 'highp 3-component vector of float'
+```
+
+Maybe this is baked into ColorSpaceNode? See hack in BlendNormalsNode...

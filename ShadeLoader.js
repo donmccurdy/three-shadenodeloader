@@ -68,6 +68,7 @@ import {
 import { Noise2DNode } from './nodes/Noise2DNode.js';
 import { Noise3DNode } from './nodes/Noise3DNode.js';
 import { RemapNode } from './nodes/RemapNode.js';
+import { BlendNormalsNode } from './nodes/BlendNormalsNode.js';
 
 const CombineMode = {
   EQUALS: 1,
@@ -83,6 +84,10 @@ class ShadeLoader {
 
     this.manager = manager;
 
+    this.textureLoader = new THREE.TextureLoader();
+
+    this.resourcePath = '';
+
     this.factory = ( nodeDef ) => {
 
       throw new Error( `THREE.ShadeLoader: Instance of ${nodeDef.class} required, but not provided.` );
@@ -97,16 +102,24 @@ class ShadeLoader {
 
   }
 
+  setResourcePath ( resourcePath ) {
+
+    this.resourcePath = resourcePath;
+
+  }
+
   load ( url, onLoad, onProgress, onError ) {
+
+    const path = THREE.LoaderUtils.extractUrlBase( url );
 
     fetch( url )
       .then( ( response ) => response.json() )
-      .then( ( json ) => this.parse( json, onLoad, onError ) )
+      .then( ( json ) => this.parse( json, path, onLoad, onError ) )
       .catch( onError );
 
   }
 
-  parse ( json, onLoad, onError ) {
+  parse ( json, path, onLoad, onError ) {
 
     if ( json.version !== 3 ) {
 
@@ -222,6 +235,7 @@ class ShadeLoader {
               createParameter( nodeDef, inputs, 'offset' ),
               OperatorNode.ADD
             );
+            node.normal = createParameter( nodeDef, inputs, 'normal' );
             node.color = createParameter( nodeDef, inputs, 'diffuse' );
             node.mask = new CondNode(
               createParameter( nodeDef, inputs, 'opacity' ),
@@ -266,6 +280,15 @@ class ShadeLoader {
                 && def.options.userLabel === nodeDef.options.localVarName;
             } );
             node = createNode( decl.id );
+            break;
+
+          case 'TextureNode':
+            node = new TextureNode(
+              createParameter( nodeDef, inputs, 'texture' ),
+              createParameter( nodeDef, inputs, 'uv' )
+            );
+            // TODO(donmccurdy): What is this doing in Shade?
+            // node = new OperatorNode( node, createParameter( nodeDef, inputs, 'alpha' ), OperatorNode.MUL );
             break;
 
           case 'GradientNode':
@@ -549,6 +572,19 @@ class ShadeLoader {
             needsDerivatives = true;
             break;
 
+          case 'HeighttoNormalNode':
+            // TODO(donmccurdy): Implementing HeightToNormalNode is tricky. :/
+            console.warn( '[THREE.ShadeLoader] HeightToNormalNode implementation incomplete.' );
+            node = new Vector3Node( 0.0, 1.0, 0.0 );
+            break;
+
+          case 'BlendNormalsNode':
+            node = new BlendNormalsNode(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              createParameter( nodeDef, inputs, 'arg2' )
+            );
+            break;
+
           case 'InstanceIDNode':
             node = new AttributeNode( 'instanceID', 'float' );
             break;
@@ -580,11 +616,29 @@ class ShadeLoader {
 
 
 
-    }
+    };
 
-    function createParameter ( nodeDef, inputs, paramName ) {
+    const createParameter = ( nodeDef, inputs, paramName ) => {
 
       if ( inputs[ paramName ] ) return inputs[ paramName ];
+
+      if ( nodeDef.class === 'TextureNode' && paramName === 'texture' ) {
+
+        const resourcePath = this.resourcePath || path;
+
+        const texture = this.textureLoader.load( `${resourcePath}${nodeDef.options.value}.png` );
+
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+
+        texture.encoding = nodeDef.options.isNormalMap
+          ? THREE.LinearEncoding
+          : THREE.sRGBEncoding;
+
+        // if ( nodeDef.options.isNormalMap ) texture.format = THREE.RGBFormat;
+
+        return texture;
+
+      }
 
       const value = nodeDef.inputs[ paramName ].value;
 
@@ -601,7 +655,7 @@ class ShadeLoader {
 
       throw new Error( `THREE.ShadeLoader: Could not create parameter, "${paramName}".` );
 
-    }
+    };
 
     json.connections.forEach( ( connection ) => {
 
