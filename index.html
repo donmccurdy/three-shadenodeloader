@@ -10,6 +10,25 @@
     height: 100%;
     overflow: hidden;
   }
+  p {
+    margin: 0;
+  }
+  .attribution {
+    width: 100%;
+    max-width: 400px;
+    color: #424242;
+    position: fixed;
+    bottom: 2em;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    background: rgba(255,255,255, 0.8);
+    padding: 0.5em 1em 0.7em;
+    border-radius: 2px;
+    font-family: monospace;
+    text-align: center;
+    max-width: 402px;
+  }
 </style>
 <script src="./node_modules/dat.gui/build/dat.gui.js"></script>
 <script src="./node_modules/three/build/three.js"></script>
@@ -52,17 +71,17 @@
 
   const examples = [
 
+    {name: 'Instancing Grid', shader: 'assets/shaders/InstancingGrid/Graph.json', prop: 'roundedCube', camera: [ 25, 20, 25 ], grid: false },
     {name: 'Checkers', shader: 'assets/shaders/Checkers/Graph.json', prop: 'cube', camera: [ 5, 3, 4 ] },
     {name: 'Dissolve', shader: 'assets/shaders/Dissolve/Graph.json', prop: 'suzanne', camera: [ 5, 3, 4 ] },
     {name: 'Fake Volume', shader: 'assets/shaders/FakeVolume/Graph.json', prop: 'sphere', camera: [ 5, 3, 4 ] },
     {name: 'Grass', shader: 'assets/shaders/Grass/Graph.json', prop: 'grass', camera: [ 10, 8, 10 ] },
     {name: 'Hologram', shader: 'assets/shaders/Hologram/Graph.json', prop: 'suzanne', camera: [ 5, 3, 4 ] },
-    {name: 'Instancing Grid', shader: 'assets/shaders/InstancingGrid/Graph.json', prop: 'roundedCube', camera: [ 25, 20, 25 ] },
     {name: 'Wire Ripple', shader: 'assets/shaders/WireRipple/Graph.json', prop: 'plane', camera: [ 5, 3, 4 ] },
     {name: 'Wireframe', shader: 'assets/shaders/Wireframe/Graph.json', prop: 'sphere', camera: [ 5, 3, 4 ] },
     // {name: '[broken] Clouds', shader: 'assets/shaders/Clouds/Graph.json', prop: 'cube', camera: [ 5, 3, 4 ] },
-    {name: '[broken] Explosion', shader: 'assets/shaders/Explosion/Graph.json', prop: 'sphere', camera: [ 5, 3, 4 ] },
-    {name: '[broken] Mask Blend', shader: 'assets/shaders/MaskBlend/Graph.json', prop: 'cube', camera: [ 5, 3, 4 ] },
+    {name: '[broken] Explosion', shader: 'assets/shaders/Explosion/Graph.json', prop: 'sphere', camera: [ 25, 20, 25 ] },
+    // {name: '[broken] Mask Blend', shader: 'assets/shaders/MaskBlend/Graph.json', prop: 'cube', camera: [ 5, 3, 4 ] },
     {name: '[broken] Ripple', shader: 'assets/shaders/Ripple/Graph.json', prop: 'plane', camera: [ 5, 3, 4 ] },
 
   ];
@@ -107,7 +126,8 @@
   directLight.position.set( 3, 5, 3 );
   scene.add( directLight );
 
-  scene.add( new THREE.GridHelper() );
+  const gridHelper = new THREE.GridHelper()
+  scene.add( gridHelper );
 
   const clock = new THREE.Clock();
 
@@ -221,6 +241,8 @@
     camera.position.fromArray( selectedExample.camera );
     controls.update();
 
+    gridHelper.visible = selectedExample.grid === false ? false : true;
+
     renderer.render( scene, camera );
 
     renderer.setAnimationLoop( (  ) => {
@@ -316,3 +338,14 @@
 
   }
 </script>
+<div class="attribution">
+  <p>
+    three.js loader for <a href="https://www.producthunt.com/posts/shade-3">Shade on iOS</a>
+  </p>
+  <p>•</p>
+  <p>
+    demo by Don McCurdy
+    (<a href="https://twitter.com/donrmccurdy">@donrmccurdy</a>,
+    <a href="https://github.com/donmccurdy/three-shadenodeloader">source code</a>)
+  </p>
+</div>

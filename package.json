@@ -1,10 +1,12 @@
 {
-  "name": "three-shadeloader",
+  "name": "three-shadenodeloader",
+  "private": true,
   "version": "0.0.1",
   "description": "Load shader graphs from Shade app for iOS, to three.js",
-  "main": "ShadeLoader.js",
+  "main": "ShadeNodeLoader.js",
   "scripts": {
-    "dev": "serve ."
+    "dev": "serve .",
+    "deploy": "now && now alias"
   },
   "keywords": [
     "three",

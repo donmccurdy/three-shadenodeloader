@@ -1,0 +1,12 @@
+{
+  "name": "three-shadenodeloader",
+  "version": 1,
+  "type": "static",
+  "files": [
+    "./",
+    "node_modules"
+  ],
+  "alias": [
+    "three-shadenodeloader.donmccurdy.com"
+  ]
+}
