@@ -258,6 +258,15 @@
 
   }
 
+  window.addEventListener( 'resize', () => {
+
+    const {clientHeight, clientWidth} = document.body;
+    camera.aspect = clientWidth / clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize( clientWidth, clientHeight );
+
+  } );
+
   function makeDerivatives ( material ) {
 
     const onBeforeCompile = material.onBeforeCompile;
