@@ -43,13 +43,13 @@
     {name: 'Checkers', shader: 'assets/Checkers/Graph.json', prop: 'cube'},
     {name: 'Dissolve', shader: 'assets/Dissolve/Graph.json', prop: 'suzanne'},
     {name: 'Fake Volume', shader: 'assets/FakeVolume/Graph.json', prop: 'sphere'},
+    {name: 'Grass', shader: 'assets/Grass/Graph.json', prop: 'grass'},
     {name: 'Hologram', shader: 'assets/Hologram/Graph.json', prop: 'suzanne'},
     {name: 'Instancing Grid', shader: 'assets/InstancingGrid/Graph.json', prop: 'cube'},
     {name: 'Wire Ripple', shader: 'assets/WireRipple/Graph.json', prop: 'plane'},
     {name: 'Wireframe', shader: 'assets/Wireframe/Graph.json', prop: 'sphere'},
     {name: '[broken] Clouds', shader: 'assets/Clouds/Graph.json', prop: 'cube'},
     {name: '[broken] Explosion', shader: 'assets/Explosion/Graph.json', prop: 'sphere'},
-    {name: '[broken] Grass', shader: 'assets/Grass/Graph.json', prop: 'cube'},
     {name: '[broken] Mask Blend', shader: 'assets/MaskBlend/Graph.json', prop: 'cube'},
     {name: '[broken] Ripple', shader: 'assets/Ripple/Graph.json', prop: 'plane'},
 
@@ -93,6 +93,14 @@
     animate();
 
   } );
+
+  modelLoader.load( 'assets/grassBlade.glb', ( { scene } ) => {
+
+    props.grass = scene.children[ 0 ].geometry;
+
+    animate();
+
+  }, undefined, (e) => console.error(e) );
 
   const loader = new ShadeLoader();
 
@@ -148,7 +156,7 @@
 
   function animate () {
 
-    if ( ! props.suzanne || ! material ) return;
+    if ( ! props.suzanne || ! props.grass || ! material ) return;
 
     geometry = props[selectedExample.prop];
 

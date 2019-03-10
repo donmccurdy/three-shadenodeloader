@@ -167,6 +167,11 @@ class ShadeLoader {
           if ( leftProp === 'r' ) dep = new SwitchNode( dep, 'r' );
           if ( leftProp === 'g' ) dep = new SwitchNode( dep, 'g' );
           if ( leftProp === 'b' ) dep = new SwitchNode( dep, 'b' );
+          if ( leftProp === 'u' ) dep = new SwitchNode( dep, 'r' );
+          if ( leftProp === 'v' ) dep = new SwitchNode( dep, 'g' );
+          if ( leftProp === 'x' ) dep = new SwitchNode( dep, 'x' );
+          if ( leftProp === 'y' ) dep = new SwitchNode( dep, 'y' );
+          if ( leftProp === 'z' ) dep = new SwitchNode( dep, 'z' );
 
           if ( swizzle ) {
 
@@ -180,7 +185,22 @@ class ShadeLoader {
               if ( g ) g.forEach( ( c, i ) => ( components[ 'rgb'.indexOf( c ) ] = 'g' ) );
               if ( b ) b.forEach( ( c, i ) => ( components[ 'rgb'.indexOf( c ) ] = 'b' ) );
 
-              dep = new SwitchNode( dep, components.join('') );
+              const numComponentsFound = components.filter( ( v ) => v ).length;
+
+              if ( sizeOut === numComponentsFound ) {
+
+                dep = new SwitchNode( dep, components.join('') );
+
+              } else {
+
+                dep = new JoinNode(
+                  ( components[ 0 ] ? new SwitchNode( dep, components[ 0 ] ) : new FloatNode( 0.0 ) ),
+                  sizeOut > 1 ? ( components[ 1 ] ? new SwitchNode( dep, components[ 1 ] ) : new FloatNode( 0.0 ) ) : undefined,
+                  sizeOut > 2 ? ( components[ 2 ] ? new SwitchNode( dep, components[ 2 ] ) : new FloatNode( 0.0 ) ) : undefined,
+                  sizeOut > 3 ? ( components[ 3 ] ? new SwitchNode( dep, components[ 3 ] ) : new FloatNode( 0.0 ) ) : undefined
+                );
+
+              }
 
             } else {
 
@@ -273,7 +293,10 @@ class ShadeLoader {
             break;
 
           case 'ColorNode':
-            node = new ColorNode( new THREE.Color().fromArray ( nodeDef.inputs.value.value ) );
+            const color = new THREE.Color()
+              .fromArray ( nodeDef.inputs.value.value )
+              .convertSRGBToLinear();
+            node = new ColorNode( color );
             break;
 
           case 'RelayNode':
@@ -368,6 +391,10 @@ class ShadeLoader {
               createParameter( nodeDef, inputs, 'arg2' ),
               OperatorNode.DIV
             );
+            break;
+
+          case 'RandomNode':
+            node = new NoiseNode( createParameter( nodeDef, inputs, 'arg1' ) );
             break;
 
           case 'Noise2DNode':
