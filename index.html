@@ -227,8 +227,8 @@
     // FWidthNode
     if ( material.userData.needsDerivatives ) material = makeDerivatives( material );
 
-    // BarymetricNode
-    if ( material.userData.needsBarycentric ) geometry = makeBarymetric( geometry );
+    // BarycentricNode
+    if ( material.userData.needsBarycentric ) geometry = makeBarycentric( geometry );
 
     // TODO(donmccurdy): Environment map is not having a noticeable effect...
     // material.envMap = new TextureNode( envMap );
@@ -283,7 +283,7 @@
 
   }
 
-  function makeBarymetric ( geometry ) {
+  function makeBarycentric ( geometry ) {
 
     geometry = geometry.toNonIndexed();
 
