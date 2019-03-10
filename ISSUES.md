@@ -50,3 +50,11 @@ Maybe this is baked into ColorSpaceNode? See hack in BlendNormalsNode...
 ## Confused about v3 vs vec3
 
 Seems to be used both ways, but e.g. AttributeNode works with 'vec3' and not 'v3'.
+
+## Function name collisions and dependencies
+
+Suppose my function depends on a `frac` or `remap` function. I need to embed that in my function's code, which is likely to cause collisions with other nodes. And order matters. Dependency management is hard.
+
+## Setting .alpha forces transparency to true
+
+Not a major problem, but kind of unexpected.

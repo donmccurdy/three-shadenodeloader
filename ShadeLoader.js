@@ -65,10 +65,11 @@ import {
 
 } from './node_modules/three/examples/js/nodes/Nodes.js';
 
+import { BlendNormalsNode } from './nodes/BlendNormalsNode.js';
 import { Noise2DNode } from './nodes/Noise2DNode.js';
 import { Noise3DNode } from './nodes/Noise3DNode.js';
 import { RemapNode } from './nodes/RemapNode.js';
-import { BlendNormalsNode } from './nodes/BlendNormalsNode.js';
+import { Voronoi3DNode } from './nodes/Voronoi3DNode.js';
 
 const CombineMode = {
   EQUALS: 1,
@@ -231,18 +232,34 @@ class ShadeLoader {
         switch ( nodeDef.class ) {
           case 'SurfaceNode':
             node = new StandardNodeMaterial();
-            node.position = new OperatorNode(
-              new PositionNode(),
-              createParameter( nodeDef, inputs, 'offset' ),
-              OperatorNode.ADD
-            );
-            node.normal = createParameter( nodeDef, inputs, 'normal' );
+
+            if ( isConnected( nodeDef, inputs, 'offset' ) ) {
+
+              node.position = new OperatorNode(
+                new PositionNode(),
+                createParameter( nodeDef, inputs, 'offset' ),
+                OperatorNode.ADD
+              );
+
+            }
+
+            if ( isConnected( nodeDef, inputs, 'normal' ) ) {
+
+              node.normal = createParameter( nodeDef, inputs, 'normal' );
+
+            }
+
             node.color = createParameter( nodeDef, inputs, 'diffuse' );
+
+            // Forces .transparency=true, which isn't needed in any examples.
+            // node.alpha = createParameter( nodeDef, inputs, 'opacity' );
+
             node.mask = new CondNode(
               createParameter( nodeDef, inputs, 'opacity' ),
               createParameter( nodeDef, inputs, 'opacityClip' ),
               CondNode.GREATER
             );
+
             node.emissive = createParameter( nodeDef, inputs, 'emissionColor' );
             node.roughness = createParameter( nodeDef, inputs, 'rough' );
             node.metalness = createParameter( nodeDef, inputs, 'metallic' );
@@ -253,15 +270,6 @@ class ShadeLoader {
               node.blending = THREE.MultiplyBlending;
             }
             node.side = nodeDef.cullFace === 'none' ? THREE.DoubleSide : THREE.FrontSide;
-            break;
-
-          case 'PropNode':
-            // TODO(donmccurdy): Include visible properties?
-            node = new Vector3Node(
-              nodeDef.options.position[ 0 ],
-              nodeDef.options.position[ 1 ],
-              nodeDef.options.position[ 2 ]
-            );
             break;
 
           case 'ColorNode':
@@ -439,11 +447,6 @@ class ShadeLoader {
             );
             break;
 
-          case 'TimeNode':
-          case 'MicNode':
-            node = this.factory( nodeDef, ( prop ) => createParameter( nodeDef, inputs, prop ) );
-            break;
-
           case 'SplitNode':
             node = createParameter( nodeDef, inputs, 'value' );
             break;
@@ -463,6 +466,10 @@ class ShadeLoader {
               createParameter( nodeDef, inputs, 'arg2' ),
               Math2Node.MOD
             );
+            break;
+
+          case 'NormalizeNode':
+            node = new Math1Node( createParameter( nodeDef, inputs, 'arg1' ), Math1Node.NORMALIZE );
             break;
 
           case 'SinNode':
@@ -563,6 +570,15 @@ class ShadeLoader {
             );
             break;
 
+          case 'Clamp01Node':
+            node = new Math3Node(
+              createParameter( nodeDef, inputs, 'arg1' ),
+              new FloatNode( 0.0 ),
+              new FloatNode( 1.0 ),
+              Math3Node.CLAMP
+            );
+            break;
+
           case 'SmoothstepNode':
             node = new Math3Node(
               createParameter( nodeDef, inputs, 'arg1' ),
@@ -570,6 +586,10 @@ class ShadeLoader {
               createParameter( nodeDef, inputs, 'arg3' ),
               Math3Node.SMOOTHSTEP
             );
+            break;
+
+          case 'Voronoi3DNode':
+            node = new Voronoi3DNode( createParameter( nodeDef, inputs, 'arg1' ) );
             break;
 
           case 'FWidthNode':
@@ -600,6 +620,12 @@ class ShadeLoader {
             instanceCountNodes.push( node );
             break;
 
+          case 'MicNode':
+          case 'PropNode':
+          case 'TimeNode':
+            node = this.factory( nodeDef, ( prop ) => createParameter( nodeDef, inputs, prop ) );
+            break;
+
         }
 
         if ( ! node && ! skipped ) {
@@ -623,6 +649,8 @@ class ShadeLoader {
 
 
     };
+
+    const isConnected = ( nodeDef, inputs, paramName ) => paramName in inputs;
 
     const createParameter = ( nodeDef, inputs, paramName ) => {
 

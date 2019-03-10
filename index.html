@@ -16,7 +16,7 @@
 <script src="./node_modules/three/examples/js/loaders/GLTFLoader.js"></script>
 <script type="module">
   import { ShadeLoader } from './ShadeLoader.js';
-  import { TimerNode, FloatNode } from './node_modules/three/examples/js/nodes/Nodes.js';
+  import { TimerNode, FloatNode, Vector3Node } from './node_modules/three/examples/js/nodes/Nodes.js';
 
   const renderer = new THREE.WebGLRenderer( { antialias: true } );
   renderer.setSize( window.innerWidth, window.innerHeight );
@@ -40,17 +40,18 @@
 
   const examples = [
 
+    {name: 'Checkers', shader: 'assets/Checkers/Graph.json', prop: 'cube'},
     {name: 'Dissolve', shader: 'assets/Dissolve/Graph.json', prop: 'suzanne'},
     {name: 'Fake Volume', shader: 'assets/FakeVolume/Graph.json', prop: 'sphere'},
     {name: 'Hologram', shader: 'assets/Hologram/Graph.json', prop: 'suzanne'},
     {name: 'Instancing Grid', shader: 'assets/InstancingGrid/Graph.json', prop: 'cube'},
-    {name: 'Checkers', shader: 'assets/Checkers/Graph.json', prop: 'cube'},
     {name: 'Wire Ripple', shader: 'assets/WireRipple/Graph.json', prop: 'plane'},
     {name: 'Wireframe', shader: 'assets/Wireframe/Graph.json', prop: 'sphere'},
-    {name: '[broken] Ripple', shader: 'assets/Ripple/Graph.json', prop: 'plane'},
     {name: '[broken] Clouds', shader: 'assets/Clouds/Graph.json', prop: 'cube'},
+    {name: '[broken] Explosion', shader: 'assets/Explosion/Graph.json', prop: 'sphere'},
     {name: '[broken] Grass', shader: 'assets/Grass/Graph.json', prop: 'cube'},
     {name: '[broken] Mask Blend', shader: 'assets/MaskBlend/Graph.json', prop: 'cube'},
+    {name: '[broken] Ripple', shader: 'assets/Ripple/Graph.json', prop: 'plane'},
 
   ];
   let selectedExample = examples[ 0 ];
@@ -103,7 +104,16 @@
         return timerNode;
 
       case 'MicNode':
-        return micNode;;
+        // TODO(donmccurdy): Add some audio.
+        return micNode;
+
+      case 'PropNode':
+        // TODO(donmccurdy): Include visible properties.
+        return new Vector3Node(
+          nodeDef.options.position[ 0 ],
+          nodeDef.options.position[ 1 ],
+          nodeDef.options.position[ 2 ]
+        );
 
     }
 
