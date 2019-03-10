@@ -83,6 +83,18 @@ class ShadeLoader {
 
     this.manager = manager;
 
+    this.factory = ( nodeDef ) => {
+
+      throw new Error( `THREE.ShadeLoader: Instance of ${nodeDef.class} required, but not provided.` );
+
+    };
+
+  }
+
+  setFactory ( factory ) {
+
+    this.factory = factory;
+
   }
 
   load ( url, onLoad, onProgress, onError ) {
@@ -104,7 +116,6 @@ class ShadeLoader {
 
     const nodeCache = {};
     const dependencies = {};
-    const timerNodes = [];
     const instanceCountNodes = [];
     let needsDerivatives = false;
 
@@ -115,7 +126,7 @@ class ShadeLoader {
       .setLabel('ONE')
       .setReadonly(true);
 
-    function createNode ( nodeID ) {
+    const createNode = ( nodeID ) => {
 
       if ( nodeCache[ nodeID ] ) return nodeCache[ nodeID ];
 
@@ -400,8 +411,8 @@ class ShadeLoader {
             break;
 
           case 'TimeNode':
-            node = new TimerNode( 1.0 );
-            timerNodes.push( node );
+          case 'MicNode':
+            node = this.factory( nodeDef, ( prop ) => createParameter( nodeDef, inputs, prop ) );
             break;
 
           case 'SplitNode':
@@ -538,11 +549,6 @@ class ShadeLoader {
             needsDerivatives = true;
             break;
 
-          case 'MicNode':
-            // TODO(donmccurdy): Boringgg.
-            node = new FloatNode( 0.01 );
-            break;
-
           case 'InstanceIDNode':
             node = new AttributeNode( 'instanceID', 'float' );
             break;
@@ -624,7 +630,6 @@ class ShadeLoader {
 
       material.userData.instanceCount = surfaceNodeDef.options.instanceCount;
       material.userData.needsDerivatives = needsDerivatives;
-      material.userData.timerNodes = timerNodes;
       onLoad( material );
     } ).catch( onError );
 

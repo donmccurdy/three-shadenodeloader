@@ -16,6 +16,7 @@
 <script src="./node_modules/three/examples/js/loaders/GLTFLoader.js"></script>
 <script type="module">
   import { ShadeLoader } from './ShadeLoader.js';
+  import { TimerNode, FloatNode } from './node_modules/three/examples/js/nodes/Nodes.js';
 
   const renderer = new THREE.WebGLRenderer( { antialias: true } );
   renderer.setSize( window.innerWidth, window.innerHeight );
@@ -24,6 +25,9 @@
   renderer.gammaOutput = true;
   renderer.gammaFactor = 2.2;
   document.body.appendChild( renderer.domElement );
+
+  const timerNode = new TimerNode( 1.0 );
+  const micNode = new FloatNode( 0.01 );
 
   let mesh, geometry, material;
 
@@ -45,6 +49,8 @@
     {name: '[broken] Clouds', shader: 'assets/Clouds/Graph.json', prop: 'cube'},
     {name: '[broken] Grass', shader: 'assets/Grass/Graph.json', prop: 'cube'},
     {name: '[broken] Mask Blend', shader: 'assets/MaskBlend/Graph.json', prop: 'cube'},
+    {name: '[broken] Wireframe', shader: 'assets/Wireframe/Graph.json', prop: 'cube'},
+    {name: '[broken] Ripple', shader: 'assets/Ripple/Graph.json', prop: 'cube'},
 
   ];
   let selectedExample = examples[ 0 ];
@@ -88,6 +94,23 @@
   } );
 
   const loader = new ShadeLoader();
+
+  loader.setFactory( ( nodeDef ) => {
+
+    switch ( nodeDef.class ) {
+
+      case 'TimeNode':
+        return timerNode;
+
+      case 'MicNode':
+        return micNode;;
+
+    }
+
+    throw new Error( `Unprovided node type: ${nodeDef.class}.` );
+
+
+  } );
 
   const initShader = () => {
 
@@ -147,12 +170,7 @@
 
     renderer.setAnimationLoop( (  ) => {
 
-      const delta = clock.getDelta();
-      material.userData.timerNodes.forEach( ( node ) => {
-
-        node.updateFrame( { delta, time: clock.getElapsedTime() } );
-
-      } );
+      timerNode.updateFrame( { delta: clock.getDelta(), time: clock.getElapsedTime() } );
 
       renderer.render( scene, camera );
 
