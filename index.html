@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
+<title>three.js • examples • shade node loader</title>
 <style>
   html, body {
     margin: 0;
@@ -15,7 +16,7 @@
 <script src="./node_modules/three/examples/js/controls/OrbitControls.js"></script>
 <script src="./node_modules/three/examples/js/loaders/GLTFLoader.js"></script>
 <script type="module">
-  import { ShadeLoader } from './ShadeLoader.js';
+  import { ShadeNodeLoader } from './ShadeNodeLoader.js';
   import { TimerNode, FloatNode, Vector3Node } from './node_modules/three/examples/js/nodes/Nodes.js';
 
   const renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -29,7 +30,11 @@
   const timerNode = new TimerNode( 1.0 );
   const micNode = new FloatNode( 0.01 );
 
+  const otherProps = [];
+
   let mesh, geometry, material;
+
+  //
 
   const props = {
     suzanne: null,
@@ -64,8 +69,19 @@
     mesh.parent.remove( mesh );
     mesh.geometry.dispose();
     mesh.material.dispose();
-    initShader();
+    otherProps.forEach( ( o ) => o.parent.remove( o ) );
+    otherProps.length = 0;
+
+    loadShader( selectedExample.shader ).then( ( _material ) => {
+
+      material = _material;
+      animate();
+
+    } );
+
   } );
+
+  //
 
   const scene = new THREE.Scene();
 
@@ -86,35 +102,21 @@
 
   const clock = new THREE.Clock();
 
+  //
+
   const modelLoader = new THREE.GLTFLoader();
 
-  modelLoader.load( 'assets/Suzanne.glb', ( { scene } ) => {
+  const loadGeometry = ( url ) => new Promise( ( resolve, reject ) => {
 
-    props.suzanne = scene.children[ 0 ].geometry;
-
-    animate();
+    modelLoader.load( url, ( { scene } ) => resolve( scene.children[ 0 ].geometry ), undefined, reject );
 
   } );
 
-  modelLoader.load( 'assets/GrassBlade.glb', ( { scene } ) => {
+  //
 
-    props.grass = scene.children[ 0 ].geometry;
+  const loader = new ShadeNodeLoader();
 
-    animate();
-
-  } );
-
-  modelLoader.load( 'assets/RoundedCube.glb', ( { scene } ) => {
-
-    props.roundedCube = scene.children[ 0 ].geometry;
-
-    animate();
-
-  } );
-
-  const loader = new ShadeLoader();
-
-  loader.setFactory( ( nodeDef ) => {
+  const customNodeFactory = ( nodeDef ) => {
 
     switch ( nodeDef.class ) {
 
@@ -126,85 +128,74 @@
         return micNode;
 
       case 'PropNode':
-        // TODO(donmccurdy): Include visible properties.
+        const prop = new THREE.Mesh(
+          new THREE.SphereBufferGeometry( 1, 32, 32 ),
+          new THREE.MeshStandardMaterial( { color: 0x858585, roughness: 1, metalness: 0 } )
+        );
+        prop.name = nodeDef.options.userLabel || '';
+        prop.position.fromArray( nodeDef.options.position );
+        prop.scale.fromArray( nodeDef.options.scale );
+        scene.add( prop );
+        otherProps.push( prop );
         return new Vector3Node(
-          nodeDef.options.position[ 0 ],
-          nodeDef.options.position[ 1 ],
-          nodeDef.options.position[ 2 ]
+          prop.position.x,
+          prop.position.y,
+          prop.position.z
         );
 
     }
 
     throw new Error( `Unprovided node type: ${nodeDef.class}.` );
 
+  };
+
+  loader.setFactory( customNodeFactory );
+
+  const loadShader = ( url ) => new Promise( ( resolve, reject ) => {
+
+    loader.load( url, resolve, undefined, reject );
 
   } );
 
-  const initShader = () => {
+  //
 
-    loader.load(
+  Promise.all([
+    loadShader( selectedExample.shader ),
+    loadGeometry( 'assets/Suzanne.glb' ),
+    loadGeometry( 'assets/GrassBlade.glb' ),
+    loadGeometry( 'assets/RoundedCube.glb' ),
+  ])
+    .then( ( [ _material, suzanne, grass, roundedCube ] ) => {
 
-      selectedExample.shader,
+      material = _material;
 
-      ( _material ) => {
+      props.suzanne = suzanne;
+      props.grass = grass;
+      props.roundedCube = roundedCube;
 
-        material = _material;
+      animate();
 
-        animate();
+    } )
+    .catch( ( e ) => {
 
-      },
+      console.error( e );
 
-      () => console.info( '[THREE.ShadeLoader] Progress.' ),
+    } );
 
-      ( e ) => console.error( e )
-
-    );
-
-  };
-
-  initShader();
+  //
 
   function animate () {
 
-    if ( ! props.suzanne || ! props.grass || ! props.roundedCube || ! material ) return;
-
     geometry = props[selectedExample.prop];
 
-    populateInstances();
+    // Instancing
+    if ( material.userData.instanceCount > 1 ) geometry = makeInstances( geometry, material );
 
     // FWidthNode
-    if ( material.userData.needsDerivatives ) {
+    if ( material.userData.needsDerivatives ) material = makeDerivatives( material );
 
-      const onBeforeCompile = material.onBeforeCompile;
-
-      material.onBeforeCompile = function () {
-
-        onBeforeCompile.apply(this, arguments);
-
-        material.extensions.derivatives = true;
-
-      };
-
-    }
-
-    if ( material.userData.needsBarycentric ) {
-
-      geometry = window.geometry = geometry.toNonIndexed();
-
-      const vertexCount = geometry.attributes.position.count;
-      const barycentric = new THREE.BufferAttribute( new Uint16Array( vertexCount * 3 ), 3 );
-
-      for ( let i = 0; i < geometry.attributes.position.count; i += 3 ) {
-
-        barycentric.setXYZ( i, 1, 0, 0 );
-        barycentric.setXYZ( i + 1, 0, 1, 0 );
-        barycentric.setXYZ( i + 2, 0, 0, 1 );
-
-      }
-
-      geometry.addAttribute( 'barycentric', barycentric );
-
-    }
+    // BarymetricNode
+    if ( material.userData.needsBarycentric ) geometry = makeBarymetric( geometry );
 
     mesh = new THREE.Mesh( geometry, material );
     mesh.position.y = 1;
@@ -228,11 +219,46 @@
 
   }
 
-  function populateInstances () {
+  function makeDerivatives ( material ) {
+
+    const onBeforeCompile = material.onBeforeCompile;
+
+    material.onBeforeCompile = function () {
+
+      onBeforeCompile.apply(this, arguments);
+
+      material.extensions.derivatives = true;
+
+    };
+
+    return material;
+
+  }
+
+  function makeBarymetric ( geometry ) {
+
+    geometry = geometry.toNonIndexed();
+
+    const vertexCount = geometry.attributes.position.count;
+    const barycentric = new THREE.BufferAttribute( new Uint16Array( vertexCount * 3 ), 3 );
+
+    for ( let i = 0; i < geometry.attributes.position.count; i += 3 ) {
+
+      barycentric.setXYZ( i, 1, 0, 0 );
+      barycentric.setXYZ( i + 1, 0, 1, 0 );
+      barycentric.setXYZ( i + 2, 0, 0, 1 );
+
+    }
+
+    geometry.addAttribute( 'barycentric', barycentric );
+
+    return geometry;
+
+  }
+
+  function makeInstances ( geometry, material ) {
 
     const instanceCount = material.userData.instanceCount;
-
-    if ( instanceCount <= 1 ) return;
 
     const instanceID = new THREE.InstancedBufferAttribute(
       new Float32Array( new Array( instanceCount ).fill( 0 ).map( ( _, index ) => index ) ),
@@ -242,6 +268,12 @@
     geometry = new THREE.InstancedBufferGeometry().copy( geometry );
     geometry.addAttribute( 'instanceID', instanceID );
     geometry.maxInstancedCount = instanceCount;
+
+    return geometry;
+
+  }
+
+  function createEnvironment () {
 
   }
 </script>

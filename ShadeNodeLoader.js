@@ -79,7 +79,7 @@ const CombineMode = {
   DIVIDE: 5
 };
 
-class ShadeLoader {
+class ShadeNodeLoader {
 
   constructor ( manager ) {
 
@@ -91,7 +91,7 @@ class ShadeLoader {
 
     this.factory = ( nodeDef ) => {
 
-      throw new Error( `THREE.ShadeLoader: Instance of ${nodeDef.class} required, but not provided.` );
+      throw new Error( `THREE.ShadeNodeLoader: Instance of ${nodeDef.class} required, but not provided.` );
 
     };
 
@@ -124,7 +124,7 @@ class ShadeLoader {
 
     if ( json.version !== 3 ) {
 
-      console.warn( '[THREE.ShadeLoader] Tested only against Shade format v3. Older or newer versions may not work correctly.' );
+      console.warn( '[THREE.ShadeNodeLoader] Tested only against Shade format v3. Older or newer versions may not work correctly.' );
 
     }
 
@@ -219,7 +219,7 @@ class ShadeLoader {
           switch ( mode ) {
 
             case CombineMode.EQUALS:
-              if ( inputs[ rightProp ] ) console.warn( `[THREE.ShadeLoader] Overwriting ".${rightProp}".` );
+              if ( inputs[ rightProp ] ) console.warn( `[THREE.ShadeNodeLoader] Overwriting ".${rightProp}".` );
               inputs[ rightProp ] = dep;
               break;
 
@@ -240,7 +240,7 @@ class ShadeLoader {
               break;
 
             default:
-              console.warn( `[THREE.ShadeLoader] Unknown combine mode "${mode}" for socket ".${rightProp}".` );
+              console.warn( `[THREE.ShadeNodeLoader] Unknown combine mode "${mode}" for socket ".${rightProp}".` );
 
           }
 
@@ -329,10 +329,10 @@ class ShadeLoader {
             canvas.height = 16;
 
             // debug
-            canvas.style.position = 'absolute';
-            canvas.style.top = '1em';
-            canvas.style.left = '1em';
-            document.body.appendChild( canvas );
+            // canvas.style.position = 'absolute';
+            // canvas.style.top = '1em';
+            // canvas.style.left = '1em';
+            // document.body.appendChild( canvas );
 
             const ctx = canvas.getContext( '2d' );
             const { startPos, endPos } = nodeDef.options;
@@ -627,7 +627,7 @@ class ShadeLoader {
 
           case 'HeighttoNormalNode':
             // TODO(donmccurdy): Implementing HeightToNormalNode is tricky. :/
-            console.warn( '[THREE.ShadeLoader] HeightToNormalNode implementation incomplete.' );
+            console.warn( '[THREE.ShadeNodeLoader] HeightToNormalNode implementation incomplete.' );
             node = new Vector3Node( 0.0, 1.0, 0.0 );
             break;
 
@@ -657,7 +657,7 @@ class ShadeLoader {
 
         if ( ! node && ! skipped ) {
 
-          console.warn( `[THREE.ShadeLoader] Node type "${nodeDef.class}" not implemented.` );
+          console.warn( `[THREE.ShadeNodeLoader] Node type "${nodeDef.class}" not implemented.` );
           return null;
 
         }
@@ -714,7 +714,7 @@ class ShadeLoader {
           return new Vector4Node( value[ 0 ], value[ 1 ], value[ 2 ], value[ 3 ] );
       }
 
-      throw new Error( `THREE.ShadeLoader: Could not create parameter, "${paramName}".` );
+      throw new Error( `THREE.ShadeNodeLoader: Could not create parameter, "${paramName}".` );
 
     };
 
@@ -729,7 +729,7 @@ class ShadeLoader {
       // debug
       const leftNodeDef = json.nodes.find( ( node ) => node.id === leftID );
       const rightNodeDef = json.nodes.find( ( node ) => node.id === rightID );
-      console.log( `${leftNodeDef.options.userLabel}.${leftProp} --> ${rightNodeDef.options.userLabel}.${rightProp} <${mode}>` );
+      // console.log( `${leftNodeDef.options.userLabel}.${leftProp} --> ${rightNodeDef.options.userLabel}.${rightProp} <${mode}>` );
 
     } );
 
@@ -773,4 +773,4 @@ function sanitizeLabel ( label ) {
 
 }
 
-export { ShadeLoader };
+export { ShadeNodeLoader };

@@ -1,28 +1,38 @@
-# THREE.ShadeLoader
+# THREE.ShadeNodeLoader
 
 ![Status](https://img.shields.io/badge/status-experimental-orange.svg)
-[![License](https://img.shields.io/badge/license-MIT-007ec6.svg)](https://github.com/donmccurdy/three-shadeloader/blob/master/LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-007ec6.svg)](https://github.com/donmccurdy/three-shadenodeloader/blob/master/LICENSE)
 
 three.js loader for shaders created with Shade app for iOS.
 
 ```js
-  const loader = new ShadeLoader();
+const loader = new ShadeNodeLoader();
 
-  loader.load(
+const sceneTime = new TimerNode();
 
-    'shaders/Dissolve/Graph.json',
+loader.setFactory( ( nodeDef ) => {
 
-    ( material ) => {
+  switch ( nodeDef.class ) {
 
-      const mesh = new THREE.Mesh( new THREE.TorusKnotBufferGeometry(), material );
+    case 'TimeNode':
+      return sceneTime;
 
-      scene.add( mesh );
+    default:
+      throw new Error(`Unknown type: ${nodeDef.class}.`);
 
-    },
+  }
 
-    ( event ) => console.info( event ),
+} );
 
-    ( error ) => console.error( error )
+loader.load(
 
-  );
+  'shaders/Dissolve/Graph.json',
+
+  ( material ) => scene.add( new THREE.Mesh( new THREE.TorusKnotBufferGeometry(), material ) ),
+
+  ( event ) => console.info( event ),
+
+  ( error ) => console.error( error )
+
+);
 ```
