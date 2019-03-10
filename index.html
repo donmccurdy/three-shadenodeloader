@@ -15,9 +15,14 @@
 <script src="./node_modules/three/build/three.js"></script>
 <script src="./node_modules/three/examples/js/controls/OrbitControls.js"></script>
 <script src="./node_modules/three/examples/js/loaders/GLTFLoader.js"></script>
+<script src="./node_modules/three/examples/js/loaders/RGBELoader.js"></script>
+<script src="./node_modules/three/examples/js/loaders/HDRCubeTextureLoader.js"></script>
+<script src="./node_modules/three/examples/js/pmrem/PMREMGenerator.js"></script>
+<script src="./node_modules/three/examples/js/pmrem/PMREMCubeUVPacker.js"></script>
+
 <script type="module">
   import { ShadeNodeLoader } from './ShadeNodeLoader.js';
-  import { TimerNode, FloatNode, Vector3Node } from './node_modules/three/examples/js/nodes/Nodes.js';
+  import { TextureNode, TimerNode, FloatNode, Vector3Node } from './node_modules/three/examples/js/nodes/Nodes.js';
 
   const renderer = new THREE.WebGLRenderer( { antialias: true } );
   renderer.setSize( window.innerWidth, window.innerHeight );
@@ -32,7 +37,7 @@
 
   const otherProps = [];
 
-  let mesh, geometry, material;
+  let mesh, geometry, material, envMap;
 
   //
 
@@ -47,18 +52,18 @@
 
   const examples = [
 
-    {name: 'Checkers', shader: 'assets/shaders/Checkers/Graph.json', prop: 'cube'},
-    {name: 'Dissolve', shader: 'assets/shaders/Dissolve/Graph.json', prop: 'suzanne'},
-    {name: 'Fake Volume', shader: 'assets/shaders/FakeVolume/Graph.json', prop: 'sphere'},
-    {name: 'Grass', shader: 'assets/shaders/Grass/Graph.json', prop: 'grass'},
-    {name: 'Hologram', shader: 'assets/shaders/Hologram/Graph.json', prop: 'suzanne'},
-    {name: 'Instancing Grid', shader: 'assets/shaders/InstancingGrid/Graph.json', prop: 'roundedCube'},
-    {name: 'Wire Ripple', shader: 'assets/shaders/WireRipple/Graph.json', prop: 'plane'},
-    {name: 'Wireframe', shader: 'assets/shaders/Wireframe/Graph.json', prop: 'sphere'},
-    {name: '[broken] Clouds', shader: 'assets/shaders/Clouds/Graph.json', prop: 'cube'},
-    {name: '[broken] Explosion', shader: 'assets/shaders/Explosion/Graph.json', prop: 'sphere'},
-    {name: '[broken] Mask Blend', shader: 'assets/shaders/MaskBlend/Graph.json', prop: 'cube'},
-    {name: '[broken] Ripple', shader: 'assets/shaders/Ripple/Graph.json', prop: 'plane'},
+    {name: 'Checkers', shader: 'assets/shaders/Checkers/Graph.json', prop: 'cube', camera: [ 5, 3, 4 ] },
+    {name: 'Dissolve', shader: 'assets/shaders/Dissolve/Graph.json', prop: 'suzanne', camera: [ 5, 3, 4 ] },
+    {name: 'Fake Volume', shader: 'assets/shaders/FakeVolume/Graph.json', prop: 'sphere', camera: [ 5, 3, 4 ] },
+    {name: 'Grass', shader: 'assets/shaders/Grass/Graph.json', prop: 'grass', camera: [ 10, 8, 10 ] },
+    {name: 'Hologram', shader: 'assets/shaders/Hologram/Graph.json', prop: 'suzanne', camera: [ 5, 3, 4 ] },
+    {name: 'Instancing Grid', shader: 'assets/shaders/InstancingGrid/Graph.json', prop: 'roundedCube', camera: [ 25, 20, 25 ] },
+    {name: 'Wire Ripple', shader: 'assets/shaders/WireRipple/Graph.json', prop: 'plane', camera: [ 5, 3, 4 ] },
+    {name: 'Wireframe', shader: 'assets/shaders/Wireframe/Graph.json', prop: 'sphere', camera: [ 5, 3, 4 ] },
+    // {name: '[broken] Clouds', shader: 'assets/shaders/Clouds/Graph.json', prop: 'cube', camera: [ 5, 3, 4 ] },
+    {name: '[broken] Explosion', shader: 'assets/shaders/Explosion/Graph.json', prop: 'sphere', camera: [ 5, 3, 4 ] },
+    {name: '[broken] Mask Blend', shader: 'assets/shaders/MaskBlend/Graph.json', prop: 'cube', camera: [ 5, 3, 4 ] },
+    {name: '[broken] Ripple', shader: 'assets/shaders/Ripple/Graph.json', prop: 'plane', camera: [ 5, 3, 4 ] },
 
   ];
   let selectedExample = examples[ 0 ];
@@ -86,10 +91,14 @@
   const scene = new THREE.Scene();
 
   const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.01, 100 );
-  camera.position.set( 5, 3, 4 );
   scene.add( camera );
 
   const controls = new THREE.OrbitControls( camera, renderer.domElement );
+  controls.target.set( 0, 1, 0 );
+
+  const dirLight = new THREE.DirectionalLight( 0xBBBBDD, 1.0 );
+  dirLight.position.set( 20, 12, 5 );
+  scene.add( dirLight );
 
   const hemiLight = new THREE.HemisphereLight( 0xDDBBBB, 0xBBBBDD, 1.0 );
   scene.add( hemiLight );
@@ -130,11 +139,12 @@
       case 'PropNode':
         const prop = new THREE.Mesh(
           new THREE.SphereBufferGeometry( 1, 32, 32 ),
-          new THREE.MeshStandardMaterial( { color: 0x858585, roughness: 1, metalness: 0 } )
+          new THREE.MeshStandardMaterial( { color: 0x858585, roughness: 0.8, metalness: 1 } )
         );
         prop.name = nodeDef.options.userLabel || '';
         prop.position.fromArray( nodeDef.options.position );
         prop.scale.fromArray( nodeDef.options.scale );
+        prop.material.envMap = envMap;
         scene.add( prop );
         otherProps.push( prop );
         return new Vector3Node(
@@ -161,13 +171,16 @@
 
   Promise.all([
     loadShader( selectedExample.shader ),
+    loadEnvironment( 'assets/environments/FootprintCourt/' ),
     loadGeometry( 'assets/Suzanne.glb' ),
     loadGeometry( 'assets/GrassBlade.glb' ),
     loadGeometry( 'assets/RoundedCube.glb' ),
   ])
-    .then( ( [ _material, suzanne, grass, roundedCube ] ) => {
+    .then( ( [ _material, _envMap, suzanne, grass, roundedCube ] ) => {
 
       material = _material;
+
+      envMap = _envMap;
 
       props.suzanne = suzanne;
       props.grass = grass;
@@ -197,12 +210,16 @@
     // BarymetricNode
     if ( material.userData.needsBarycentric ) geometry = makeBarymetric( geometry );
 
+    // TODO(donmccurdy): Environment map is not having a noticeable effect...
+    material.envMap = new TextureNode( envMap );
+
     mesh = new THREE.Mesh( geometry, material );
     mesh.position.y = 1;
 
     scene.add( mesh );
 
-    camera.lookAt( mesh.position );
+    camera.position.fromArray( selectedExample.camera );
+    controls.update();
 
     renderer.render( scene, camera );
 
@@ -273,7 +290,29 @@
 
   }
 
-  function createEnvironment () {
+  function loadEnvironment ( path ) {
+
+    const cubeMapURLs = [
+      `${path}/posx.hdr`, `${path}/negx.hdr`,
+      `${path}/posy.hdr`, `${path}/negy.hdr`,
+      `${path}/posz.hdr`, `${path}/negz.hdr`
+    ];
+
+    return new Promise( ( resolve ) => {
+
+      new THREE.HDRCubeTextureLoader().load( THREE.UnsignedByteType, cubeMapURLs, ( hdrCubeMap ) => {
+
+        var pmremGenerator = new THREE.PMREMGenerator( hdrCubeMap );
+        pmremGenerator.update( renderer );
+
+        var pmremCubeUVPacker = new THREE.PMREMCubeUVPacker( pmremGenerator.cubeLods );
+        pmremCubeUVPacker.update( renderer );
+
+        resolve( pmremCubeUVPacker.CubeUVRenderTarget.texture );
+
+      } );
+
+    });
 
   }
 </script>

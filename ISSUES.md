@@ -58,3 +58,7 @@ Suppose my function depends on a `frac` or `remap` function. I need to embed tha
 ## Setting .alpha forces transparency to true
 
 Not a major problem, but kind of unexpected.
+
+## Environment map
+
+Not seeing a noticeable effect when adding an HDR env map. :/
