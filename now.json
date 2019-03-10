@@ -4,7 +4,8 @@
   "type": "static",
   "files": [
     "./",
-    "node_modules"
+    "node_modules",
+    "!assets/environments"
   ],
   "alias": [
     "three-shadenodeloader.donmccurdy.com"

@@ -164,7 +164,7 @@
         prop.name = nodeDef.options.userLabel || '';
         prop.position.fromArray( nodeDef.options.position );
         prop.scale.fromArray( nodeDef.options.scale );
-        prop.material.envMap = envMap;
+        // prop.material.envMap = envMap;
         scene.add( prop );
         otherProps.push( prop );
         return new Vector3Node(
@@ -231,7 +231,7 @@
     if ( material.userData.needsBarycentric ) geometry = makeBarymetric( geometry );
 
     // TODO(donmccurdy): Environment map is not having a noticeable effect...
-    material.envMap = new TextureNode( envMap );
+    // material.envMap = new TextureNode( envMap );
 
     mesh = new THREE.Mesh( geometry, material );
     mesh.position.y = 1;
@@ -314,27 +314,29 @@
 
   function loadEnvironment ( path ) {
 
-    const cubeMapURLs = [
-      `${path}/posx.hdr`, `${path}/negx.hdr`,
-      `${path}/posy.hdr`, `${path}/negy.hdr`,
-      `${path}/posz.hdr`, `${path}/negz.hdr`
-    ];
+    return Promise.resolve( null );
 
-    return new Promise( ( resolve ) => {
+    // const cubeMapURLs = [
+    //   `${path}/posx.hdr`, `${path}/negx.hdr`,
+    //   `${path}/posy.hdr`, `${path}/negy.hdr`,
+    //   `${path}/posz.hdr`, `${path}/negz.hdr`
+    // ];
 
-      new THREE.HDRCubeTextureLoader().load( THREE.UnsignedByteType, cubeMapURLs, ( hdrCubeMap ) => {
+    // return new Promise( ( resolve ) => {
 
-        var pmremGenerator = new THREE.PMREMGenerator( hdrCubeMap );
-        pmremGenerator.update( renderer );
+    //   new THREE.HDRCubeTextureLoader().load( THREE.UnsignedByteType, cubeMapURLs, ( hdrCubeMap ) => {
 
-        var pmremCubeUVPacker = new THREE.PMREMCubeUVPacker( pmremGenerator.cubeLods );
-        pmremCubeUVPacker.update( renderer );
+    //     var pmremGenerator = new THREE.PMREMGenerator( hdrCubeMap );
+    //     pmremGenerator.update( renderer );
 
-        resolve( pmremCubeUVPacker.CubeUVRenderTarget.texture );
+    //     var pmremCubeUVPacker = new THREE.PMREMCubeUVPacker( pmremGenerator.cubeLods );
+    //     pmremCubeUVPacker.update( renderer );
 
-      } );
+    //     resolve( pmremCubeUVPacker.CubeUVRenderTarget.texture );
 
-    });
+    //   } );
+
+    // });
 
   }
 </script>
