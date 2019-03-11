@@ -10,6 +10,9 @@ const loader = new ShadeNodeLoader();
 
 const sceneTime = new TimerNode();
 
+// Some node types (time, microphone input, props, etc.) need to be
+// provided by the application. Use the `.setFactory()` method to configure
+// a callback for creating these nodes.
 loader.setFactory( ( nodeDef ) => {
 
   switch ( nodeDef.class ) {
@@ -24,6 +27,12 @@ loader.setFactory( ( nodeDef ) => {
 
 } );
 
+// The load callback returns a THREE.NodeMaterial instance, ready to be
+// used in a mesh. Additional properties created by the loader may be
+// visible in `material.userData`, such as:
+// - needsDerivatives: Derivatives must be enabled on the material.
+// - needsBarycentric: Barycentric coordinates must be added to the geometry.
+// - instanceCount: Requires a THREE.InstanceBufferGeometry with the given count.
 loader.load(
 
   'shaders/Dissolve/Graph.json',
